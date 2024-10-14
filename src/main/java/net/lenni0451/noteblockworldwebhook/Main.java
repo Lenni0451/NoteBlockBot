@@ -8,6 +8,7 @@ import net.lenni0451.commons.httpclient.content.HttpContent;
 import net.lenni0451.commons.httpclient.content.impl.MultiPartFormContent;
 import net.lenni0451.commons.httpclient.content.impl.StringContent;
 import net.raphimc.noteblocklib.NoteBlockLib;
+import net.raphimc.noteblocklib.format.SongFormat;
 import net.raphimc.noteblocklib.format.nbs.NbsSong;
 import net.raphimc.noteblocktool.audio.SoundMap;
 import org.json.JSONArray;
@@ -112,13 +113,12 @@ public class Main {
         String songName = song.getString("title");
         System.out.println("Found " + songName + " by " + song.getJSONObject("uploader").getString("username"));
         String downloadUrl = "https://api.noteblock.world/api/v1/song/" + song.getString("publicId") + "/download?src=downloadButton";
-        File nbsFile = File.createTempFile("song", ".nbs");
         System.out.println("Downloading nbs file...");
-        Files.write(nbsFile.toPath(), CLIENT.get(downloadUrl).execute().getContent());
-        NbsSong nbsSong = (NbsSong) NoteBlockLib.readSong(nbsFile);
+        byte[] nbsData = CLIENT.get(downloadUrl).execute().getContent();
+        NbsSong nbsSong = (NbsSong) NoteBlockLib.readSong(nbsData, SongFormat.NBS);
         String description = SongUtils.getDescription(song, nbsSong);
         System.out.println("Encoding mp3 file...");
-        File mp3File = SongUtils.encode(nbsSong);
+        byte[] mp3Data = SongUtils.encode(nbsSong);
 
         MultiPartFormContent content = new MultiPartFormContent();
         content.addPart("payload_json", new StringContent(ContentTypes.APPLICATION_JSON, new JSONObject()
@@ -141,16 +141,14 @@ public class Main {
                                 .put("filename", songName + ".mp3"))
                 )
                 .toString()));
-        content.addPart(new MultiPartFormContent.FormPart("files[0]", HttpContent.file(nbsFile), songName + ".nbs")
+        content.addPart(new MultiPartFormContent.FormPart("files[0]", HttpContent.bytes(nbsData), songName + ".nbs")
                 .setHeader(Headers.CONTENT_TYPE, ContentTypes.APPLICATION_OCTET_STREAM.getMimeType())
         );
-        content.addPart(new MultiPartFormContent.FormPart("files[1]", HttpContent.file(mp3File), songName + ".mp3")
+        content.addPart(new MultiPartFormContent.FormPart("files[1]", HttpContent.bytes(mp3Data), songName + ".mp3")
                 .setHeader(Headers.CONTENT_TYPE, ContentTypes.APPLICATION_OCTET_STREAM.getMimeType())
         );
         System.out.println("Sending webhook...");
         HttpResponse response = CLIENT.post(WEBHOOK_URL).setContent(content).execute();
-        nbsFile.delete();
-        mp3File.delete();
         if (response.getStatusCode() / 100 != 2) {
             throw new IOException("Failed to send webhook (" + response.getStatusCode() + "): " + response.getContentAsString());
         } else {

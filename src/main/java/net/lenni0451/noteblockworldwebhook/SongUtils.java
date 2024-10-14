@@ -12,8 +12,7 @@ import net.raphimc.noteblocktool.audio.export.impl.JavaxAudioExporter;
 import org.json.JSONObject;
 
 import javax.sound.sampled.AudioFormat;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,29 +41,28 @@ public class SongUtils {
         return metadata.entrySet().stream().filter(e -> !e.getValue().isEmpty()).map(e -> "**" + e.getKey() + ":** " + e.getValue()).collect(Collectors.joining("\n"));
     }
 
-    public static File encode(final NbsSong song) throws Exception {
-        File outFile = File.createTempFile("song", ".mp3");
-        FileOutputStream fos = new FileOutputStream(outFile);
-        byte[] samples = sample(song);
-        int numSamples = samples.length / FORMAT.getFrameSize();
-        byte[] mp3Buffer = new byte[(int) (1.25 * numSamples + 7200)];
-        Pointer lame = LameLibrary.INSTANCE.lame_init();
-        if (lame == null) throw new IllegalStateException("Failed to initialize LAME encoder");
-        int result = LameLibrary.INSTANCE.lame_set_in_samplerate(lame, (int) FORMAT.getSampleRate());
-        if (result < 0) throw new IllegalStateException("Failed to set sample rate: " + result);
-        result = LameLibrary.INSTANCE.lame_set_num_channels(lame, FORMAT.getChannels());
-        if (result < 0) throw new IllegalStateException("Failed to set channels: " + result);
-        result = LameLibrary.INSTANCE.lame_init_params(lame);
-        if (result < 0) throw new IllegalStateException("Failed to initialize LAME parameters: " + result);
-        result = LameLibrary.INSTANCE.lame_encode_buffer_interleaved(lame, samples, numSamples, mp3Buffer, mp3Buffer.length);
-        if (result < 0) throw new IllegalStateException("Failed to encode buffer: " + result);
-        fos.write(mp3Buffer, 0, result);
-        result = LameLibrary.INSTANCE.lame_encode_flush(lame, mp3Buffer, mp3Buffer.length);
-        if (result < 0) throw new IllegalStateException("Failed to flush encoder: " + result);
-        fos.write(mp3Buffer, 0, result);
-        LameLibrary.INSTANCE.lame_close(lame);
-        fos.close();
-        return outFile;
+    public static byte[] encode(final NbsSong song) throws Exception {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            byte[] samples = sample(song);
+            int numSamples = samples.length / FORMAT.getFrameSize();
+            byte[] mp3Buffer = new byte[(int) (1.25 * numSamples + 7200)];
+            Pointer lame = LameLibrary.INSTANCE.lame_init();
+            if (lame == null) throw new IllegalStateException("Failed to initialize LAME encoder");
+            int result = LameLibrary.INSTANCE.lame_set_in_samplerate(lame, (int) FORMAT.getSampleRate());
+            if (result < 0) throw new IllegalStateException("Failed to set sample rate: " + result);
+            result = LameLibrary.INSTANCE.lame_set_num_channels(lame, FORMAT.getChannels());
+            if (result < 0) throw new IllegalStateException("Failed to set channels: " + result);
+            result = LameLibrary.INSTANCE.lame_init_params(lame);
+            if (result < 0) throw new IllegalStateException("Failed to initialize LAME parameters: " + result);
+            result = LameLibrary.INSTANCE.lame_encode_buffer_interleaved(lame, samples, numSamples, mp3Buffer, mp3Buffer.length);
+            if (result < 0) throw new IllegalStateException("Failed to encode buffer: " + result);
+            baos.write(mp3Buffer, 0, result);
+            result = LameLibrary.INSTANCE.lame_encode_flush(lame, mp3Buffer, mp3Buffer.length);
+            if (result < 0) throw new IllegalStateException("Failed to flush encoder: " + result);
+            baos.write(mp3Buffer, 0, result);
+            LameLibrary.INSTANCE.lame_close(lame);
+            return baos.toByteArray();
+        }
     }
 
     private static byte[] sample(final NbsSong song) throws Exception {
