@@ -25,6 +25,15 @@ repositories {
         name = "lenni0451"
         url = "https://maven.lenni0451.net/everything"
     }
+    ivy {
+        url "https://github.com"
+        patternLayout {
+            artifact "/[organisation]/[module]/releases/download/v[revision]/[module]-[revision].[ext]"
+        }
+        metadataSources {
+            artifact()
+        }
+    }
 }
 
 dependencies {
@@ -33,6 +42,7 @@ dependencies {
     compileOnly(annotationProcessor("org.projectlombok:lombok:1.18.34"))
     include "net.lenni0451.commons:httpclient:1.6.1-SNAPSHOT"
     include "org.json:json:20240303"
+    include "RaphiMC:NoteBlockTool:1.1.7@jar" //Kinda cursed but it works
 }
 
 jar {
