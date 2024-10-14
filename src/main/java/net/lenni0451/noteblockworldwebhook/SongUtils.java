@@ -27,8 +27,16 @@ public class SongUtils {
         metadata.put("Description", song.optString("description"));
         metadata.put("Original author", song.optString("originalAuthor"));
         metadata.put("Notes", String.valueOf(SongUtil.getNoteCount(nbsSong.getView())));
-        int length = (int) Math.ceil(nbsSong.getView().getLength() / nbsSong.getView().getSpeed());
-        metadata.put("Length", String.format("%02d:%02d:%02d", length / 3600, (length / 60) % 60, length % 60));
+        int vanillaInstruments = SongUtil.getUsedVanillaInstruments(nbsSong.getView()).size();
+        int customInstruments = SongUtil.getUsedCustomInstruments(nbsSong.getView()).size();
+        if (vanillaInstruments == 0) {
+            metadata.put("Instruments", customInstruments + " (custom)");
+        } else if (customInstruments == 0) {
+            metadata.put("Instruments", vanillaInstruments + " (vanilla)");
+        } else {
+            metadata.put("Instruments", (vanillaInstruments + customInstruments) + " (" + vanillaInstruments + " vanilla, " + customInstruments + " custom)");
+        }
+        metadata.put("Speed", String.format("%.2f t/s", nbsSong.getView().getSpeed()));
         return metadata.entrySet().stream().filter(e -> !e.getValue().isEmpty()).map(e -> "**" + e.getKey() + ":** " + e.getValue()).collect(Collectors.joining("\n"));
     }
 
