@@ -30,11 +30,11 @@ public class SongUtils {
         int vanillaInstruments = SongUtil.getUsedVanillaInstruments(nbsSong.getView()).size();
         int customInstruments = SongUtil.getUsedCustomInstruments(nbsSong.getView()).size();
         if (vanillaInstruments == 0) {
-            metadata.put("Instruments", customInstruments + " (custom)");
+            metadata.put("Instruments", customInstruments + " *(custom)*");
         } else if (customInstruments == 0) {
-            metadata.put("Instruments", vanillaInstruments + " (vanilla)");
+            metadata.put("Instruments", vanillaInstruments + " *(vanilla)*");
         } else {
-            metadata.put("Instruments", (vanillaInstruments + customInstruments) + " (" + vanillaInstruments + " vanilla, " + customInstruments + " custom)");
+            metadata.put("Instruments", (vanillaInstruments + customInstruments) + " *(" + vanillaInstruments + " vanilla, " + customInstruments + " custom)*");
         }
         metadata.put("Speed", String.format("%.2f t/s", nbsSong.getView().getSpeed()));
         int length = (int) Math.ceil(nbsSong.getView().getLength() / nbsSong.getView().getSpeed());
