@@ -83,11 +83,11 @@ public class Main {
         }, 0, 1, TimeUnit.HOURS);
     }
 
-    private static List<JSONObject> fetchNewSongs() throws IOException {
+    private static List<JSONObject> fetchNewSongs() throws IOException, InterruptedException {
         List<JSONObject> newSongs = new ArrayList<>();
-        int page = 1;
         PAGE_LOOP:
-        while (true) {
+        for (int page = 1; newSongs.size() % 10 == 0; page++) {
+            System.out.println("Fetching page " + page + "...");
             HttpResponse response = CLIENT.get(API_URL.replace("{PAGE}", String.valueOf(page))).execute();
             JSONArray songs = new JSONArray(response.getContentAsString());
             for (int i = 0; i < songs.length(); i++) {
@@ -99,7 +99,8 @@ public class Main {
                     break PAGE_LOOP;
                 }
             }
-            page++;
+
+            Thread.sleep(1000); //Sleep for 1 second to not hit the rate limit
         }
         newSongs.sort(Comparator.comparing(a -> ZonedDateTime.parse(a.getString("updatedAt"), DateTimeFormatter.ISO_DATE_TIME)));
         return newSongs;
