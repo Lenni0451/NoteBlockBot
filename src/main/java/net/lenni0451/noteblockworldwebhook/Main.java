@@ -95,8 +95,8 @@ public class Main {
             JSONArray songs = new JSONArray(response.getContentAsString());
             for (int i = 0; i < songs.length(); i++) {
                 JSONObject song = songs.getJSONObject(i);
-                Instant updatedAt = ZonedDateTime.parse(song.getString("updatedAt"), DateTimeFormatter.ISO_DATE_TIME).toInstant();
-                if (updatedAt.isAfter(lastUpdate)) {
+                Instant createdAt = ZonedDateTime.parse(song.getString("createdAt"), DateTimeFormatter.ISO_DATE_TIME).toInstant();
+                if (createdAt.isAfter(lastUpdate)) {
                     newSongs.add(song);
                 } else {
                     break PAGE_LOOP;
@@ -105,7 +105,7 @@ public class Main {
 
             Thread.sleep(1000); //Sleep for 1 second to not hit the rate limit
         }
-        newSongs.sort(Comparator.comparing(a -> ZonedDateTime.parse(a.getString("updatedAt"), DateTimeFormatter.ISO_DATE_TIME)));
+        newSongs.sort(Comparator.comparing(a -> ZonedDateTime.parse(a.getString("createdAt"), DateTimeFormatter.ISO_DATE_TIME)));
         return newSongs;
     }
 
