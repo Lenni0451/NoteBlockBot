@@ -9,6 +9,7 @@ import net.lenni0451.commons.httpclient.content.impl.MultiPartFormContent;
 import net.lenni0451.commons.httpclient.content.impl.StringContent;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.nbs.NbsSong;
+import net.raphimc.noteblocktool.audio.SoundMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -63,6 +64,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        SoundMap.reload(new File("Sounds"));
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(() -> {
             try {
