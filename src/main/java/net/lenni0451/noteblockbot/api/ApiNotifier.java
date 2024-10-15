@@ -2,8 +2,11 @@ package net.lenni0451.noteblockbot.api;
 
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.lenni0451.commons.httpclient.HttpResponse;
+import net.lenni0451.noteblockbot.DataStore;
 import net.lenni0451.noteblockbot.Main;
 import net.lenni0451.noteblockbot.utils.Mp3Encoder;
 import net.lenni0451.noteblockbot.utils.NetUtils;
@@ -105,12 +108,21 @@ public class ApiNotifier {
         embed.setImage(song.getString("thumbnailUrl"));
         embed.setUrl("https://noteblock.world/song/" + song.getString("publicId"));
         embed.setAuthor(song.getJSONObject("uploader").getString("username"), null, song.getJSONObject("uploader").getString("profileImage"));
-        Main.getJda()
-                .getGuildById(851798351790997504L)
-                .getTextChannelById(1085979343211208784L)
-                .sendMessageEmbeds(embed.build())
-                .setFiles(FileUpload.fromData(mp3Data, songName + ".mp3"))
-                .queue();
+        for (Long guildId : DataStore.getGuilds()) {
+            Guild guild = Main.getJda().getGuildById(guildId);
+            if (guild == null) {
+                log.warn("Guild with id {} not found. Removing it from list.", guildId);
+                DataStore.removeChannel(guildId);
+                continue;
+            }
+            TextChannel textChannel = guild.getTextChannelById(DataStore.getChannel(guildId));
+            if (textChannel == null) {
+                log.warn("TextChannel with id {} not found in guild {}. Removing it from list.", DataStore.getChannel(guildId), guild.getName());
+                DataStore.removeChannel(guildId);
+                continue;
+            }
+            textChannel.sendMessageEmbeds(embed.build()).setFiles(FileUpload.fromData(mp3Data, songName + ".mp3")).queue();
+        }
         log.info("Sent notification");
     }
 
