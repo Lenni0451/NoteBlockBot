@@ -3,8 +3,13 @@ package net.lenni0451.noteblockbot;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.lenni0451.noteblockbot.api.ApiNotifier;
+import net.lenni0451.noteblockbot.listener.CommandListener;
 import net.lenni0451.noteblockbot.listener.MessageListener;
 import net.raphimc.noteblocktool.audio.SoundMap;
 
@@ -28,8 +33,19 @@ public class Main {
         SoundMap.reload(new File("Sounds"));
         jda = JDABuilder.create(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
                 .addEventListeners(new MessageListener())
+                .addEventListeners(new CommandListener())
                 .build().awaitReady();
+        registerCommands();
         ApiNotifier.run();
+    }
+
+    private static void registerCommands() {
+        jda.updateCommands().addCommands(
+                Commands.slash("setup", "Change the settings of the bot")
+                        .addOption(OptionType.CHANNEL, "notification-channel", "The channel where the bot should send notifications about newly uploaded songs", false)
+                        .setGuildOnly(true)
+                        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
+        ).queue();
     }
 
     public static JDA getJda() {
