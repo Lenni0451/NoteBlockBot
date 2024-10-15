@@ -35,6 +35,7 @@ public class SongInfo {
         Map<String, String> metadata = new LinkedHashMap<>();
         metadata.put("Title", sanitize(song.getHeader().getTitle()));
         metadata.put("Description", sanitize(song.getHeader().getDescription()));
+        metadata.put("Author", sanitize(song.getHeader().getAuthor()));
         metadata.put("Original author", sanitize(song.getHeader().getOriginalAuthor()));
         metadata.put("Notes", String.valueOf(SongUtil.getNoteCount(song.getView())));
         int vanillaInstruments = SongUtil.getUsedVanillaInstruments(song.getView()).size();
