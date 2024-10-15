@@ -1,13 +1,14 @@
 package net.lenni0451.noteblockbot.utils;
 
 import com.sun.jna.Pointer;
+import net.raphimc.audiomixer.util.io.SoundIO;
 import net.raphimc.noteblocklib.format.nbs.NbsSong;
 import net.raphimc.noteblocklib.format.nbs.model.NbsNote;
 import net.raphimc.noteblocklib.model.SongView;
 import net.raphimc.noteblocklib.util.SongResampler;
 import net.raphimc.noteblocktool.audio.export.AudioExporter;
 import net.raphimc.noteblocktool.audio.export.LameLibrary;
-import net.raphimc.noteblocktool.audio.export.impl.JavaxAudioExporter;
+import net.raphimc.noteblocktool.audio.export.impl.AudioMixerAudioExporter;
 
 import javax.sound.sampled.AudioFormat;
 import java.io.ByteArrayOutputStream;
@@ -44,13 +45,9 @@ public class Mp3Encoder {
         SongView<NbsNote> songView = song.getView();
         SongResampler.applyNbsTempoChangers(song, songView);
 
-        AudioExporter exporter = new JavaxAudioExporter(songView, FORMAT, 1F, f -> {});
+        AudioExporter exporter = new AudioMixerAudioExporter(songView, FORMAT, 1F, f -> {});
         exporter.render();
-        return exporter.getSamples();
-        //TODO: Update code for next NoteBlockLib version
-//        AudioExporter exporter = new AudioMixerAudioExporter(songView, FORMAT, 1F, f -> {});
-//        exporter.render();
-//        return SoundIO.writeSamples(exporter.getSamples(), FORMAT);
+        return SoundIO.writeSamples(exporter.getSamples(), FORMAT);
     }
 
 }
