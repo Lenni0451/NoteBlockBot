@@ -42,6 +42,10 @@ dependencies {
     compileOnly(annotationProcessor("org.projectlombok:lombok:1.18.34"))
     include "net.lenni0451.commons:httpclient:1.6.1-SNAPSHOT"
     include "org.json:json:20240303"
+    include("net.dv8tion:JDA:5.1.2") {
+        exclude module: "opus-java"
+    }
+    include "org.slf4j:slf4j-simple:2.0.16"
     include "RaphiMC:NoteBlockTool:1.1.7@jar" //Kinda cursed but it works
 }
 

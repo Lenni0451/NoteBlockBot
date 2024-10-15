@@ -1,45 +1,20 @@
-package net.lenni0451.noteblockworldwebhook;
+package net.lenni0451.noteblockbot.utils;
 
 import com.sun.jna.Pointer;
 import net.raphimc.noteblocklib.format.nbs.NbsSong;
 import net.raphimc.noteblocklib.format.nbs.model.NbsNote;
 import net.raphimc.noteblocklib.model.SongView;
 import net.raphimc.noteblocklib.util.SongResampler;
-import net.raphimc.noteblocklib.util.SongUtil;
 import net.raphimc.noteblocktool.audio.export.AudioExporter;
 import net.raphimc.noteblocktool.audio.export.LameLibrary;
 import net.raphimc.noteblocktool.audio.export.impl.JavaxAudioExporter;
-import org.json.JSONObject;
 
 import javax.sound.sampled.AudioFormat;
 import java.io.ByteArrayOutputStream;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-public class SongUtils {
+public class Mp3Encoder {
 
     private static final AudioFormat FORMAT = new AudioFormat(48000, 16, 2, true, false);
-
-    public static String getDescription(final JSONObject song, final NbsSong nbsSong) {
-        Map<String, String> metadata = new LinkedHashMap<>();
-        metadata.put("Description", song.optString("description"));
-        metadata.put("Original author", song.optString("originalAuthor"));
-        metadata.put("Notes", String.valueOf(SongUtil.getNoteCount(nbsSong.getView())));
-        int vanillaInstruments = SongUtil.getUsedVanillaInstruments(nbsSong.getView()).size();
-        int customInstruments = SongUtil.getUsedCustomInstruments(nbsSong.getView()).size();
-        if (vanillaInstruments == 0) {
-            metadata.put("Instruments", customInstruments + " *(custom)*");
-        } else if (customInstruments == 0) {
-            metadata.put("Instruments", vanillaInstruments + " *(vanilla)*");
-        } else {
-            metadata.put("Instruments", (vanillaInstruments + customInstruments) + " *(" + vanillaInstruments + " vanilla, " + customInstruments + " custom)*");
-        }
-        metadata.put("Speed", String.format("%.2f t/s", nbsSong.getView().getSpeed()));
-        int length = (int) Math.ceil(nbsSong.getView().getLength() / nbsSong.getView().getSpeed());
-        metadata.put("Length", String.format("%02d:%02d:%02d", length / 3600, (length / 60) % 60, length % 60));
-        return metadata.entrySet().stream().filter(e -> !e.getValue().isEmpty()).map(e -> "**" + e.getKey() + ":** " + e.getValue()).collect(Collectors.joining("\n"));
-    }
 
     public static byte[] encode(final NbsSong song) throws Exception {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
