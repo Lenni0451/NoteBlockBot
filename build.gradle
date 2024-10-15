@@ -46,7 +46,7 @@ dependencies {
         exclude module: "opus-java"
     }
     include "org.slf4j:slf4j-simple:2.0.16"
-    include "NoteBlockTool:115:1.1.8-SNAPSHOT@jar" //Kinda cursed but it works
+    include "NoteBlockTool:116:1.1.8-SNAPSHOT@jar" //Kinda cursed but it works
 }
 
 jar {

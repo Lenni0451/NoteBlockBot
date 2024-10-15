@@ -8,7 +8,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.lenni0451.commons.httpclient.HttpResponse;
 import net.lenni0451.noteblockbot.DataStore;
 import net.lenni0451.noteblockbot.Main;
-import net.lenni0451.noteblockbot.utils.Mp3Encoder;
+import net.lenni0451.noteblockbot.export.Mp3Encoder;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.lenni0451.noteblockbot.utils.SongInfo;
 import net.raphimc.noteblocklib.NoteBlockLib;

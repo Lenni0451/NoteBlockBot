@@ -1,4 +1,4 @@
-package net.lenni0451.noteblockbot.utils;
+package net.lenni0451.noteblockbot.export;
 
 import com.sun.jna.Pointer;
 import net.raphimc.audiomixer.util.io.SoundIO;
@@ -8,7 +8,6 @@ import net.raphimc.noteblocklib.model.SongView;
 import net.raphimc.noteblocklib.util.SongResampler;
 import net.raphimc.noteblocktool.audio.export.AudioExporter;
 import net.raphimc.noteblocktool.audio.export.LameLibrary;
-import net.raphimc.noteblocktool.audio.export.impl.AudioMixerAudioExporter;
 
 import javax.sound.sampled.AudioFormat;
 import java.io.ByteArrayOutputStream;
@@ -45,7 +44,7 @@ public class Mp3Encoder {
         SongView<NbsNote> songView = song.getView();
         SongResampler.applyNbsTempoChangers(song, songView);
 
-        AudioExporter exporter = new AudioMixerAudioExporter(songView, FORMAT, 1F, f -> {});
+        AudioExporter exporter = new MultithreadedAudioMixerAudioExporter(songView, FORMAT, 1F, f -> System.out.println(f * 100 + "%"));
         exporter.render();
         return SoundIO.writeSamples(exporter.getSamples(), FORMAT);
     }

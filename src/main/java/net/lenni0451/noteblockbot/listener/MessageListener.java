@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
-import net.lenni0451.noteblockbot.utils.Mp3Encoder;
+import net.lenni0451.noteblockbot.export.Mp3Encoder;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.lenni0451.noteblockbot.utils.SongInfo;
 import net.raphimc.noteblocklib.NoteBlockLib;
