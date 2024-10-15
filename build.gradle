@@ -62,7 +62,7 @@ jar {
 
     manifest {
         attributes(
-                "Main-Class": "net.lenni0451.noteblockworldwebhook.Main",
+                "Main-Class": "net.lenni0451.noteblockbot.Main",
                 "Multi-Release": "true"
         )
     }
