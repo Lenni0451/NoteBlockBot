@@ -1,5 +1,6 @@
 package net.lenni0451.noteblockbot;
 
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -10,6 +11,7 @@ import net.raphimc.noteblocktool.audio.SoundMap;
 import java.io.File;
 import java.nio.file.Files;
 
+@Slf4j
 public class Main {
 
     private final static File tokenFile = new File("token.txt");
@@ -19,7 +21,7 @@ public class Main {
         tokenFile.createNewFile();
         String token = Files.readString(tokenFile.toPath()).trim();
         if (token.isBlank()) {
-            System.out.println("Please enter a valid token in the token.txt file");
+            log.error("Please enter a valid token in the token.txt file");
             return;
         }
 
