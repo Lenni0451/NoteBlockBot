@@ -30,7 +30,7 @@ public class MessageListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         if (event.getAuthor().isBot()) return;
-        boolean isRunningAction = this.handleAttachments(event);
+        boolean isRunningAction = this.handleNbsAttachments(event);
         isRunningAction |= this.handleNoteBlockWorldLinks(event);
         if (isRunningAction) {
             event.getMessage().addReaction(CALCULATING).queue();
@@ -38,8 +38,11 @@ public class MessageListener extends ListenerAdapter {
         }
     }
 
-    private boolean handleAttachments(final MessageReceivedEvent event) {
-        List<Message.Attachment> nbsFiles = this.getNbsFiles(event.getMessage());
+    private boolean handleNbsAttachments(final MessageReceivedEvent event) {
+        List<Message.Attachment> nbsFiles = event.getMessage().getAttachments().stream()
+                .filter(attachment -> attachment.getFileExtension() != null)
+                .filter(attachment -> attachment.getFileExtension().equalsIgnoreCase("nbs"))
+                .toList();
         for (Message.Attachment attachment : nbsFiles) {
             log.info("User {} uploaded song {}", event.getAuthor().getAsTag(), attachment.getFileName());
             EXECUTOR.submit(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl()));
@@ -55,15 +58,6 @@ public class MessageListener extends ListenerAdapter {
             EXECUTOR.submit(() -> this.processSong(event.getMessage(), id + ".nbs", downloadUrl));
         }
         return !ids.isEmpty();
-    }
-
-    private List<Message.Attachment> getNbsFiles(final Message message) {
-        return message
-                .getAttachments()
-                .stream()
-                .filter(attachment -> attachment.getFileExtension() != null)
-                .filter(attachment -> attachment.getFileExtension().equalsIgnoreCase("nbs"))
-                .toList();
     }
 
     private void processSong(final Message message, final String fileName, final String url) {

@@ -28,7 +28,7 @@ public class Main {
         SoundMap.reload(new File("Sounds"));
         jda = JDABuilder.create(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
                 .addEventListeners(new MessageListener())
-                .build();
+                .build().awaitReady();
         ApiNotifier.run();
     }
 
