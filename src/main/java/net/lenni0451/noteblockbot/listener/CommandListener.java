@@ -1,16 +1,25 @@
 package net.lenni0451.noteblockbot.listener;
 
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.utils.AttachedFile;
 import net.lenni0451.noteblockbot.Main;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
+import net.lenni0451.noteblockbot.utils.NetUtils;
+import net.raphimc.noteblocklib.NoteBlockLib;
+import net.raphimc.noteblocklib.format.SongFormat;
+import net.raphimc.noteblocklib.model.Song;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.PreparedStatement;
+import java.util.List;
 
+@Slf4j
 public class CommandListener extends ListenerAdapter {
 
     @Override
@@ -32,6 +41,32 @@ public class CommandListener extends ListenerAdapter {
                     } else {
                         event.reply("Only text channels are supported").setEphemeral(true).queue();
                     }
+                }
+            }
+            case "midiconverter" -> {
+                Message.Attachment attachment = event.getOption("midi-file", OptionMapping::getAsAttachment);
+                if (attachment.getFileExtension() == null || (!attachment.getFileExtension().equalsIgnoreCase("mid") && !attachment.getFileExtension().equalsIgnoreCase("midi"))) {
+                    event.reply("The attachment is not a valid midi file").setEphemeral(true).queue();
+                } else {
+                    log.info("User {} uploaded midi file {}", event.getUser().getAsTag(), attachment.getFileName());
+                    event.reply("Converting the midi file...").setEphemeral(true).queue();
+                    Main.getTaskQueue().add(event.getGuild().getIdLong(), List.of(() -> {
+                        try {
+                            long time = System.currentTimeMillis();
+                            byte[] midiData = NetUtils.get(attachment.getUrl()).getContent();
+                            Song<?, ?, ?> song = NoteBlockLib.readSong(midiData, SongFormat.MIDI);
+                            song = NoteBlockLib.createSongFromView(song.getView(), SongFormat.NBS);
+                            byte[] nbsData = NoteBlockLib.writeSong(song);
+                            time = System.currentTimeMillis() - time;
+                            log.info("Conversion of midi file {} took {}ms", attachment.getFileName(), time);
+
+                            String fileName = attachment.getFileName().substring(0, attachment.getFileName().length() - attachment.getFileExtension().length() - 1);
+                            event.getHook().editOriginal("Conversion finished in " + (time / 1000) + "s").setAttachments(AttachedFile.fromData(nbsData, fileName + ".nbs")).queue();
+                        } catch (Throwable t) {
+                            log.error("An error occurred while converting the midi file", t);
+                            event.getHook().editOriginal("An error occurred while converting the midi file").queue();
+                        }
+                    }), () -> {});
                 }
             }
         }

@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -54,7 +53,11 @@ public class Main {
                 Commands.slash("setup", "Change the settings of the bot")
                         .addOption(OptionType.CHANNEL, "notification-channel", "The channel where the bot should send notifications about newly uploaded songs", false)
                         .setGuildOnly(true)
-                        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
+                        .setDefaultPermissions(DefaultMemberPermissions.DISABLED),
+                Commands.slash("midiconverter", "Convert a midi file to a noteblock song")
+                        .addOption(OptionType.ATTACHMENT, "midi-file", "The midi file that should be converted", true)
+                        .setGuildOnly(true)
+                        .setDefaultPermissions(DefaultMemberPermissions.ENABLED)
         ).queue();
     }
 
