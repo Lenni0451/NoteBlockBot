@@ -1,5 +1,6 @@
 package net.lenni0451.noteblockbot.listener;
 
+import com.google.common.hash.Hashing;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -9,8 +10,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.utils.AttachedFile;
 import net.lenni0451.noteblockbot.Main;
+import net.lenni0451.noteblockbot.data.Config;
+import net.lenni0451.noteblockbot.data.RateLimiter;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
-import net.lenni0451.noteblockbot.utils.Hash;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
@@ -50,37 +52,43 @@ public class CommandListener extends ListenerAdapter {
                     event.reply("The attachment is not a valid midi file").setEphemeral(true).queue();
                 } else {
                     log.info("User {} uploaded midi file {}", event.getUser().getAsTag(), attachment.getFileName());
-                    event.reply("Converting the midi file...").setEphemeral(true).queue();
-                    Main.getTaskQueue().add(event.getGuild().getIdLong(), List.of(() -> {
-                        try {
-                            long time = System.currentTimeMillis();
-                            byte[] midiData = NetUtils.get(attachment.getUrl()).getContent();
-                            Song<?, ?, ?> song = NoteBlockLib.readSong(midiData, SongFormat.MIDI);
-                            song = NoteBlockLib.createSongFromView(song.getView(), SongFormat.NBS);
-                            byte[] nbsData = NoteBlockLib.writeSong(song);
-                            time = System.currentTimeMillis() - time;
-                            log.info("Conversion of midi file {} took {}ms", attachment.getFileName(), time);
+                    if (!RateLimiter.tryUser(event.getUser().getIdLong()) || !RateLimiter.tryGuild(event.getGuild().getIdLong())) {
+                        event.reply("You are sending too many requests. Please wait a bit before sending another request. 🐌").setEphemeral(true).queue();
+                    } else if (attachment.getSize() > Config.SongLimits.maxMidiFileSize) {
+                        event.reply("The midi file is too large").setEphemeral(true).queue();
+                    } else {
+                        event.reply("Converting the midi file 🎶...").setEphemeral(true).queue();
+                        Main.getTaskQueue().add(event.getGuild().getIdLong(), List.of(() -> {
+                            try {
+                                long time = System.currentTimeMillis();
+                                byte[] midiData = NetUtils.get(attachment.getUrl()).getContent();
+                                Song<?, ?, ?> song = NoteBlockLib.readSong(midiData, SongFormat.MIDI);
+                                song = NoteBlockLib.createSongFromView(song.getView(), SongFormat.NBS);
+                                byte[] nbsData = NoteBlockLib.writeSong(song);
+                                time = System.currentTimeMillis() - time;
+                                log.info("Conversion of midi file {} took {}ms", attachment.getFileName(), time);
 
-                            String fileName = attachment.getFileName().substring(0, attachment.getFileName().length() - attachment.getFileExtension().length() - 1);
-                            event.getHook().editOriginal("Conversion finished in " + (time / 1000) + "s").setAttachments(AttachedFile.fromData(nbsData, fileName + ".nbs")).queue();
-                            try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MIDI_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
-                                statement.setLong(1, event.getGuild().getIdLong());
-                                statement.setLong(2, event.getUser().getIdLong());
-                                statement.setString(3, event.getUser().getAsTag());
-                                statement.setString(4, event.getTimeCreated().toString());
-                                statement.setString(5, attachment.getFileName());
-                                statement.setLong(6, attachment.getSize());
-                                statement.setString(7, Hash.md5(midiData));
-                                statement.setLong(8, time);
-                                statement.execute();
+                                String fileName = attachment.getFileName().substring(0, attachment.getFileName().length() - attachment.getFileExtension().length() - 1);
+                                event.getHook().editOriginal("Conversion finished in " + (time / 1000) + "s ⏱️").setAttachments(AttachedFile.fromData(nbsData, fileName + ".nbs")).queue();
+                                try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MIDI_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+                                    statement.setLong(1, event.getGuild().getIdLong());
+                                    statement.setLong(2, event.getUser().getIdLong());
+                                    statement.setString(3, event.getUser().getAsTag());
+                                    statement.setString(4, event.getTimeCreated().toString());
+                                    statement.setString(5, attachment.getFileName());
+                                    statement.setLong(6, attachment.getSize());
+                                    statement.setString(7, Hashing.md5().hashBytes(midiData).toString());
+                                    statement.setLong(8, time);
+                                    statement.execute();
+                                } catch (Throwable t) {
+                                    log.error("An error occurred while saving the midi conversion", t);
+                                }
                             } catch (Throwable t) {
-                                log.error("An error occurred while saving the midi conversion", t);
+                                log.error("An error occurred while converting the midi file", t);
+                                event.getHook().editOriginal("An error occurred while converting the midi file").queue();
                             }
-                        } catch (Throwable t) {
-                            log.error("An error occurred while converting the midi file", t);
-                            event.getHook().editOriginal("An error occurred while converting the midi file").queue();
-                        }
-                    }), () -> {});
+                        }), () -> {});
+                    }
                 }
             }
         }

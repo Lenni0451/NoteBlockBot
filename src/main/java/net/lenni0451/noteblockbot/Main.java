@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.lenni0451.noteblockbot.api.ApiNotifier;
+import net.lenni0451.noteblockbot.data.Config;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.listener.CommandListener;
 import net.lenni0451.noteblockbot.listener.MessageListener;
@@ -36,8 +37,9 @@ public class Main {
             log.error("Please enter a valid token in the token.txt file");
             return;
         }
-
+        Config.load();
         SoundMap.reload(new File("Sounds"));
+
         taskQueue = new TaskQueue();
         db = new SQLiteDB("data.db");
         jda = JDABuilder.create(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)

@@ -1,5 +1,6 @@
 package net.lenni0451.noteblockbot.listener;
 
+import com.google.common.hash.Hashing;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -7,9 +8,9 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.lenni0451.noteblockbot.Main;
+import net.lenni0451.noteblockbot.data.RateLimiter;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.export.Mp3Encoder;
-import net.lenni0451.noteblockbot.utils.Hash;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.lenni0451.noteblockbot.utils.SongInfo;
 import net.lenni0451.noteblockbot.utils.SongSource;
@@ -48,6 +49,9 @@ public class MessageListener extends ListenerAdapter {
                 .filter(attachment -> attachment.getFileExtension().equalsIgnoreCase("nbs"))
                 .toList();
         for (Message.Attachment attachment : nbsFiles) {
+            if (!RateLimiter.tryUser(event.getAuthor().getIdLong())) continue;
+            if (!RateLimiter.tryGuild(event.getGuild().getIdLong())) continue;
+
             log.info("User {} uploaded song {}", event.getAuthor().getAsTag(), attachment.getFileName());
             tasks.add(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl(), SongSource.ATTACHMENT));
         }
@@ -57,6 +61,9 @@ public class MessageListener extends ListenerAdapter {
         String rawMessage = event.getMessage().getContentRaw();
         List<String> ids = NOTEBLOCK_WORLD_PATTERN.matcher(rawMessage).results().map(match -> match.group(1)).toList();
         for (String id : ids) {
+            if (!RateLimiter.tryUser(event.getAuthor().getIdLong())) continue;
+            if (!RateLimiter.tryGuild(event.getGuild().getIdLong())) continue;
+
             String downloadUrl = "https://api.noteblock.world/api/v1/song/" + id + "/download?src=downloadButton";
             tasks.add(() -> this.processSong(event.getMessage(), id + ".nbs", downloadUrl, SongSource.NOTEBLOCK_WORLD));
         }
@@ -81,7 +88,7 @@ public class MessageListener extends ListenerAdapter {
                 statement.setInt(5, source.ordinal());
                 statement.setString(6, fileName);
                 statement.setInt(7, songData.length);
-                statement.setString(8, Hash.md5(songData));
+                statement.setString(8, Hashing.md5().hashBytes(songData).toString());
                 statement.setLong(9, System.currentTimeMillis() - start);
                 statement.execute();
             }
