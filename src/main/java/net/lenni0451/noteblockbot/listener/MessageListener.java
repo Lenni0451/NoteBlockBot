@@ -6,14 +6,18 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
+import net.lenni0451.noteblockbot.Main;
 import net.lenni0451.noteblockbot.export.Mp3Encoder;
+import net.lenni0451.noteblockbot.utils.Hash;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.lenni0451.noteblockbot.utils.SongInfo;
+import net.lenni0451.noteblockbot.utils.SongSource;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
 import net.raphimc.noteblocklib.format.nbs.NbsSong;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,7 +49,7 @@ public class MessageListener extends ListenerAdapter {
                 .toList();
         for (Message.Attachment attachment : nbsFiles) {
             log.info("User {} uploaded song {}", event.getAuthor().getAsTag(), attachment.getFileName());
-            EXECUTOR.submit(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl()));
+            EXECUTOR.submit(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl(), SongSource.ATTACHMENT));
         }
         return !nbsFiles.isEmpty();
     }
@@ -55,13 +59,14 @@ public class MessageListener extends ListenerAdapter {
         List<String> ids = NOTEBLOCK_WORLD_PATTERN.matcher(rawMessage).results().map(match -> match.group(1)).toList();
         for (String id : ids) {
             String downloadUrl = "https://api.noteblock.world/api/v1/song/" + id + "/download?src=downloadButton";
-            EXECUTOR.submit(() -> this.processSong(event.getMessage(), id + ".nbs", downloadUrl));
+            EXECUTOR.submit(() -> this.processSong(event.getMessage(), id + ".nbs", downloadUrl, SongSource.NOTEBLOCK_WORLD));
         }
         return !ids.isEmpty();
     }
 
-    private void processSong(final Message message, final String fileName, final String url) {
+    private void processSong(final Message message, final String fileName, final String url, final SongSource source) {
         try {
+            long start = System.currentTimeMillis();
             byte[] songData = NetUtils.get(url).getContent();
             NbsSong song = (NbsSong) NoteBlockLib.readSong(songData, SongFormat.NBS);
             byte[] mp3Data = Mp3Encoder.encode(song);
@@ -70,6 +75,18 @@ public class MessageListener extends ListenerAdapter {
             String songName = fileName.substring(0, fileName.length() - 4);
             if (!song.getHeader().getTitle().isBlank()) songName = song.getHeader().getTitle();
             message.replyFiles(FileUpload.fromData(mp3Data, songName + ".mp3")).setContent(info).queue();
+            try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"Conversions\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"Source\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                statement.setLong(1, message.getGuild().getIdLong());
+                statement.setLong(2, message.getAuthor().getIdLong());
+                statement.setString(3, message.getAuthor().getAsTag());
+                statement.setString(4, message.getTimeCreated().toString());
+                statement.setInt(5, source.ordinal());
+                statement.setString(6, fileName);
+                statement.setInt(7, songData.length);
+                statement.setString(8, Hash.md5(songData));
+                statement.setLong(9, System.currentTimeMillis() - start);
+                statement.execute();
+            }
         } catch (Throwable t) {
             log.error("Failed to render song", t);
         }

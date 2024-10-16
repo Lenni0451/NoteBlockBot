@@ -44,7 +44,7 @@ public class Mp3Encoder {
         SongView<NbsNote> songView = song.getView();
         SongResampler.applyNbsTempoChangers(song, songView);
 
-        AudioExporter exporter = new MultithreadedAudioMixerAudioExporter(songView, FORMAT, 1F, f -> System.out.println(f * 100 + "%"));
+        AudioExporter exporter = new MultithreadedAudioMixerAudioExporter(songView, FORMAT, 1F, f -> {});
         exporter.render();
         return SoundIO.writeSamples(exporter.getSamples(), FORMAT);
     }

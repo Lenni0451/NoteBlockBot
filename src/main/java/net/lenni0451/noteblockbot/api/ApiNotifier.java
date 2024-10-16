@@ -6,8 +6,8 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.lenni0451.commons.httpclient.HttpResponse;
-import net.lenni0451.noteblockbot.DataStore;
 import net.lenni0451.noteblockbot.Main;
+import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.export.Mp3Encoder;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.lenni0451.noteblockbot.utils.SongInfo;
@@ -20,12 +20,12 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -108,20 +108,38 @@ public class ApiNotifier {
         embed.setImage(song.getString("thumbnailUrl"));
         embed.setUrl("https://noteblock.world/song/" + song.getString("publicId"));
         embed.setAuthor(song.getJSONObject("uploader").getString("username"), null, song.getJSONObject("uploader").getString("profileImage"));
-        for (Long guildId : DataStore.getGuilds()) {
-            Guild guild = Main.getJda().getGuildById(guildId);
-            if (guild == null) {
-                log.warn("Guild with id {} not found. Removing it from list.", guildId);
-                DataStore.removeChannel(guildId);
-                continue;
+
+        Set<Long> toRemove = new HashSet<>();
+        try (PreparedStatement statement = Main.getDb().prepare("SELECT * FROM " + SQLiteDB.UPLOAD_NOTIFICATION)) {
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    long guildId = result.getLong("GuildId");
+                    long channelId = result.getLong("ChannelId");
+
+                    Guild guild = Main.getJda().getGuildById(guildId);
+                    if (guild == null) {
+                        log.warn("Guild with id {} not found. Removing it from list.", guildId);
+                        toRemove.add(guildId);
+                        continue;
+                    }
+                    TextChannel textChannel = guild.getTextChannelById(channelId);
+                    if (textChannel == null) {
+                        log.warn("TextChannel with id {} not found in guild {}. Removing it from list.", channelId, guild.getName());
+                        toRemove.add(guildId);
+                        continue;
+                    }
+                    textChannel.sendMessageEmbeds(embed.build()).setFiles(FileUpload.fromData(mp3Data, songName + ".mp3")).queue();
+                }
             }
-            TextChannel textChannel = guild.getTextChannelById(DataStore.getChannel(guildId));
-            if (textChannel == null) {
-                log.warn("TextChannel with id {} not found in guild {}. Removing it from list.", DataStore.getChannel(guildId), guild.getName());
-                DataStore.removeChannel(guildId);
-                continue;
+        }
+        if (!toRemove.isEmpty()) {
+            try (PreparedStatement statement = Main.getDb().prepare("DELETE FROM " + SQLiteDB.UPLOAD_NOTIFICATION + " WHERE GuildId = ?")) {
+                for (long guildId : toRemove) {
+                    statement.setLong(1, guildId);
+                    statement.addBatch();
+                }
+                statement.executeBatch();
             }
-            textChannel.sendMessageEmbeds(embed.build()).setFiles(FileUpload.fromData(mp3Data, songName + ".mp3")).queue();
         }
         log.info("Sent notification");
     }

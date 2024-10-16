@@ -1,5 +1,6 @@
 package net.lenni0451.noteblockbot;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -9,6 +10,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.lenni0451.noteblockbot.api.ApiNotifier;
+import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.listener.CommandListener;
 import net.lenni0451.noteblockbot.listener.MessageListener;
 import net.raphimc.noteblocktool.audio.SoundMap;
@@ -20,6 +22,9 @@ import java.nio.file.Files;
 public class Main {
 
     private final static File tokenFile = new File("token.txt");
+    @Getter
+    private static SQLiteDB db;
+    @Getter
     private static JDA jda;
 
     public static void main(String[] args) throws Throwable {
@@ -31,6 +36,7 @@ public class Main {
         }
 
         SoundMap.reload(new File("Sounds"));
+        db = new SQLiteDB("data.db");
         jda = JDABuilder.create(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
                 .addEventListeners(new MessageListener())
                 .addEventListeners(new CommandListener())
@@ -46,10 +52,6 @@ public class Main {
                         .setGuildOnly(true)
                         .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
         ).queue();
-    }
-
-    public static JDA getJda() {
-        return jda;
     }
 
 }
