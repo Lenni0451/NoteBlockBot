@@ -41,10 +41,4 @@ public class SQLiteDB {
         }
     }
 
-
-    @FunctionalInterface
-    public interface StatementRunner {
-        void run(final PreparedStatement statement) throws SQLException;
-    }
-
 }
