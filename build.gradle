@@ -45,7 +45,7 @@ dependencies {
     include("net.dv8tion:JDA:5.1.2") {
         exclude module: "opus-java"
     }
-    include "org.slf4j:slf4j-simple:2.0.16"
+    include "org.apache.logging.log4j:log4j-slf4j2-impl:2.24.1"
     include "NoteBlockTool:116:1.1.8-SNAPSHOT@jar" //Kinda cursed but it works
     include "org.xerial:sqlite-jdbc:3.46.1.3"
 }
