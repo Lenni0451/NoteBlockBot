@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.utils.AttachedFile;
 import net.lenni0451.noteblockbot.Main;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
+import net.lenni0451.noteblockbot.utils.Hash;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
@@ -62,6 +63,19 @@ public class CommandListener extends ListenerAdapter {
 
                             String fileName = attachment.getFileName().substring(0, attachment.getFileName().length() - attachment.getFileExtension().length() - 1);
                             event.getHook().editOriginal("Conversion finished in " + (time / 1000) + "s").setAttachments(AttachedFile.fromData(nbsData, fileName + ".nbs")).queue();
+                            try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MIDI_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+                                statement.setLong(1, event.getGuild().getIdLong());
+                                statement.setLong(2, event.getUser().getIdLong());
+                                statement.setString(3, event.getUser().getAsTag());
+                                statement.setString(4, event.getTimeCreated().toString());
+                                statement.setString(5, attachment.getFileName());
+                                statement.setLong(6, attachment.getSize());
+                                statement.setString(7, Hash.md5(midiData));
+                                statement.setLong(8, time);
+                                statement.execute();
+                            } catch (Throwable t) {
+                                log.error("An error occurred while saving the midi conversion", t);
+                            }
                         } catch (Throwable t) {
                             log.error("An error occurred while converting the midi file", t);
                             event.getHook().editOriginal("An error occurred while converting the midi file").queue();
