@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.lenni0451.noteblockbot.Main;
+import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.export.Mp3Encoder;
 import net.lenni0451.noteblockbot.utils.Hash;
 import net.lenni0451.noteblockbot.utils.NetUtils;
@@ -18,9 +19,8 @@ import net.raphimc.noteblocklib.format.nbs.NbsSong;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -29,39 +29,37 @@ public class MessageListener extends ListenerAdapter {
     private static final Emoji CALCULATING = Emoji.fromUnicode("⏱️");
     private static final Pattern URL_PATTERN = Pattern.compile("https?://\\S*");
     private static final Pattern NOTEBLOCK_WORLD_PATTERN = Pattern.compile("https://noteblock\\.world/song/([^/]+)");
-    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         if (event.getAuthor().isBot()) return;
-        boolean isRunningAction = this.handleNbsAttachments(event);
-        isRunningAction |= this.handleNoteBlockWorldLinks(event);
-        if (isRunningAction) {
+        List<Runnable> tasks = new ArrayList<>();
+        this.handleNbsAttachments(event, tasks);
+        this.handleNoteBlockWorldLinks(event, tasks);
+        if (!tasks.isEmpty()) {
             event.getMessage().addReaction(CALCULATING).queue();
-            EXECUTOR.submit(() -> event.getMessage().removeReaction(CALCULATING).queue());
+            Main.getTaskQueue().add(event.getGuild().getIdLong(), tasks, () -> event.getMessage().removeReaction(CALCULATING).queue());
         }
     }
 
-    private boolean handleNbsAttachments(final MessageReceivedEvent event) {
+    private void handleNbsAttachments(final MessageReceivedEvent event, final List<Runnable> tasks) {
         List<Message.Attachment> nbsFiles = event.getMessage().getAttachments().stream()
                 .filter(attachment -> attachment.getFileExtension() != null)
                 .filter(attachment -> attachment.getFileExtension().equalsIgnoreCase("nbs"))
                 .toList();
         for (Message.Attachment attachment : nbsFiles) {
             log.info("User {} uploaded song {}", event.getAuthor().getAsTag(), attachment.getFileName());
-            EXECUTOR.submit(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl(), SongSource.ATTACHMENT));
+            tasks.add(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl(), SongSource.ATTACHMENT));
         }
-        return !nbsFiles.isEmpty();
     }
 
-    private boolean handleNoteBlockWorldLinks(final MessageReceivedEvent event) {
+    private void handleNoteBlockWorldLinks(final MessageReceivedEvent event, final List<Runnable> tasks) {
         String rawMessage = event.getMessage().getContentRaw();
         List<String> ids = NOTEBLOCK_WORLD_PATTERN.matcher(rawMessage).results().map(match -> match.group(1)).toList();
         for (String id : ids) {
             String downloadUrl = "https://api.noteblock.world/api/v1/song/" + id + "/download?src=downloadButton";
-            EXECUTOR.submit(() -> this.processSong(event.getMessage(), id + ".nbs", downloadUrl, SongSource.NOTEBLOCK_WORLD));
+            tasks.add(() -> this.processSong(event.getMessage(), id + ".nbs", downloadUrl, SongSource.NOTEBLOCK_WORLD));
         }
-        return !ids.isEmpty();
     }
 
     private void processSong(final Message message, final String fileName, final String url, final SongSource source) {
@@ -75,7 +73,7 @@ public class MessageListener extends ListenerAdapter {
             String songName = fileName.substring(0, fileName.length() - 4);
             if (!song.getHeader().getTitle().isBlank()) songName = song.getHeader().getTitle();
             message.replyFiles(FileUpload.fromData(mp3Data, songName + ".mp3")).setContent(info).queue();
-            try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"Conversions\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"Source\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+            try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MP3_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"Source\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                 statement.setLong(1, message.getGuild().getIdLong());
                 statement.setLong(2, message.getAuthor().getIdLong());
                 statement.setString(3, message.getAuthor().getAsTag());

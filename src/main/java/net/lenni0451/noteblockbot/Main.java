@@ -13,6 +13,7 @@ import net.lenni0451.noteblockbot.api.ApiNotifier;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.listener.CommandListener;
 import net.lenni0451.noteblockbot.listener.MessageListener;
+import net.lenni0451.noteblockbot.task.TaskQueue;
 import net.raphimc.noteblocktool.audio.SoundMap;
 
 import java.io.File;
@@ -22,6 +23,8 @@ import java.nio.file.Files;
 public class Main {
 
     private final static File tokenFile = new File("token.txt");
+    @Getter
+    private static TaskQueue taskQueue;
     @Getter
     private static SQLiteDB db;
     @Getter
@@ -36,6 +39,7 @@ public class Main {
         }
 
         SoundMap.reload(new File("Sounds"));
+        taskQueue = new TaskQueue();
         db = new SQLiteDB("data.db");
         jda = JDABuilder.create(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
                 .addEventListeners(new MessageListener())

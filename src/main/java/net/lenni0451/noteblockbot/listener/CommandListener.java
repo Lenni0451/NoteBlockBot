@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.lenni0451.noteblockbot.Main;
+import net.lenni0451.noteblockbot.data.SQLiteDB;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.PreparedStatement;
@@ -20,7 +21,7 @@ public class CommandListener extends ListenerAdapter {
                 GuildChannelUnion notificationChannel = event.getOption("notification-channel", OptionMapping::getAsChannel);
                 if (notificationChannel != null) {
                     if (notificationChannel.getType().equals(ChannelType.TEXT)) {
-                        try (PreparedStatement statement = Main.getDb().prepare("INSERT OR REPLACE INTO \"NoteBlockWorldUploadNotificationChannels\" (\"GuildId\", \"ChannelId\") VALUES (?, ?)")) {
+                        try (PreparedStatement statement = Main.getDb().prepare("INSERT OR REPLACE INTO \"" + SQLiteDB.UPLOAD_NOTIFICATION + "\" (\"GuildId\", \"ChannelId\") VALUES (?, ?)")) {
                             statement.setLong(1, event.getGuild().getIdLong());
                             statement.setLong(2, notificationChannel.getIdLong());
                             statement.execute();
