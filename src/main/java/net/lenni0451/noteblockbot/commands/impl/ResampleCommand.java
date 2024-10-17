@@ -1,5 +1,6 @@
 package net.lenni0451.noteblockbot.commands.impl;
 
+import com.google.common.hash.Hashing;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -12,6 +13,7 @@ import net.lenni0451.noteblockbot.commands.annotations.Command;
 import net.lenni0451.noteblockbot.commands.annotations.RateLimited;
 import net.lenni0451.noteblockbot.commands.annotations.Required;
 import net.lenni0451.noteblockbot.data.Config;
+import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
@@ -21,6 +23,7 @@ import net.raphimc.noteblocklib.util.SongResampler;
 import net.raphimc.noteblocklib.util.SongUtil;
 import net.raphimc.noteblocktool.util.MinecraftOctaveClamp;
 
+import java.sql.PreparedStatement;
 import java.util.List;
 
 @Slf4j
@@ -60,6 +63,19 @@ public class ResampleCommand extends CommandParser {
                     log.info("Resampling of nbs file {} took {}ms", attachment.getFileName(), time);
 
                     event.getHook().editOriginal("Resampling finished in " + (time / 1000) + "s ⏱️").setAttachments(AttachedFile.fromData(resampledData, attachment.getFileName())).queue();
+                    try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.RESAMPLES + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+                        statement.setLong(1, event.getGuild().getIdLong());
+                        statement.setLong(2, event.getUser().getIdLong());
+                        statement.setString(3, event.getUser().getAsTag());
+                        statement.setString(4, event.getTimeCreated().toString());
+                        statement.setString(5, attachment.getFileName());
+                        statement.setLong(6, attachment.getSize());
+                        statement.setString(7, Hashing.md5().hashBytes(nbsData).toString());
+                        statement.setLong(8, time);
+                        statement.execute();
+                    } catch (Throwable t) {
+                        log.error("An error occurred while saving the midi conversion", t);
+                    }
                 } catch (Throwable t) {
                     log.error("An error occurred while resampling the nbs file", t);
                     event.getHook().editOriginal("An error occurred while resampling the nbs file").queue();
