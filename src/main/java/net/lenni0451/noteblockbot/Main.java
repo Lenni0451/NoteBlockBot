@@ -59,6 +59,12 @@ public class Main {
                 Commands.slash("midiconverter", "Convert a midi file to a noteblock song")
                         .addOption(OptionType.ATTACHMENT, "midi-file", "The midi file that should be converted", true)
                         .setGuildOnly(true)
+                        .setDefaultPermissions(DefaultMemberPermissions.ENABLED),
+                Commands.slash("resample", "Resample a noteblock song")
+                        .addOption(OptionType.ATTACHMENT, "nbs-file", "The nbs file that should be resampled", true)
+                        .addOption(OptionType.INTEGER, "speed", "The new speed of the song", false)
+                        .addOption(OptionType.STRING, "octave-clamp", "Clamp the octaves of the song", false, true)
+                        .setGuildOnly(true)
                         .setDefaultPermissions(DefaultMemberPermissions.ENABLED)
         ).queue();
     }
