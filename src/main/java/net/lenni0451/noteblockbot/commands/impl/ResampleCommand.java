@@ -18,7 +18,7 @@ import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
 import net.raphimc.noteblocklib.format.nbs.NbsSong;
-import net.raphimc.noteblocklib.model.Song;
+import net.raphimc.noteblocklib.format.nbs.model.NbsHeader;
 import net.raphimc.noteblocklib.util.SongResampler;
 import net.raphimc.noteblocklib.util.SongUtil;
 import net.raphimc.noteblocktool.util.MinecraftOctaveClamp;
@@ -57,7 +57,8 @@ public class ResampleCommand extends CommandParser {
                         SongResampler.applyNbsTempoChangers(song, song.getView());
                         SongResampler.changeTickSpeed(song.getView(), speed);
                     }
-                    Song<?, ?, ?> resampledSong = NoteBlockLib.createSongFromView(song.getView(), SongFormat.NBS);
+                    NbsSong resampledSong = (NbsSong) NoteBlockLib.createSongFromView(song.getView(), SongFormat.NBS);
+                    this.copyHeader(song.getHeader(), resampledSong.getHeader());
                     byte[] resampledData = NoteBlockLib.writeSong(resampledSong);
                     time = System.currentTimeMillis() - time;
                     log.info("Resampling of nbs file {} took {}ms", attachment.getFileName(), time);
@@ -82,6 +83,30 @@ public class ResampleCommand extends CommandParser {
                 }
             }), () -> {});
         }
+    }
+
+    private void copyHeader(final NbsHeader from, final NbsHeader to) {
+        to.setVersion((byte) Math.max(from.getVersion(), to.getVersion()));
+        to.setAuthor(from.getAuthor());
+        to.setOriginalAuthor(from.getOriginalAuthor());
+        to.setDescription(from.getDescription());
+        to.setAutoSave(from.isAutoSave());
+        to.setAutoSaveInterval(from.getAutoSaveInterval());
+        to.setTimeSignature(from.getTimeSignature());
+        to.setMinutesSpent(from.getMinutesSpent());
+        to.setLeftClicks(from.getLeftClicks());
+        to.setRightClicks(from.getRightClicks());
+        to.setNoteBlocksAdded(from.getNoteBlocksAdded());
+        to.setNoteBlocksRemoved(from.getNoteBlocksRemoved());
+        to.setSourceFileName(from.getSourceFileName());
+        to.setLoop(from.isLoop());
+        to.setMaxLoopCount(from.getMaxLoopCount());
+        to.setLoopStartTick(from.getLoopStartTick());
+
+        String newDescription = from.getDescription();
+        if (!newDescription.isEmpty()) newDescription += "\n";
+        newDescription += "Resampled using NoteBlockBot";
+        to.setDescription(newDescription);
     }
 
 }
