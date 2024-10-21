@@ -40,7 +40,7 @@ dependencies {
     compileOnly "com.google.code.findbugs:jsr305:3.0.2"
     compileOnly "org.jetbrains:annotations:26.0.1"
     compileOnly(annotationProcessor("org.projectlombok:lombok:1.18.34"))
-    include "net.lenni0451.commons:httpclient:1.6.1-SNAPSHOT"
+    include "net.lenni0451.commons:httpclient:1.6.1"
     include "net.lenni0451:optconfig:1.1.0-SNAPSHOT"
     include "org.json:json:20240303"
     include("net.dv8tion:JDA:5.1.2") {
