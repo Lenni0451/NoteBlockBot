@@ -26,9 +26,9 @@ repositories {
         url = "https://maven.lenni0451.net/everything"
     }
     ivy {
-        url "https://build.lenni0451.net/job/"
+        url "https://github.com"
         patternLayout {
-            artifact "/[organization]/[module]/artifact/build/libs/[organization]-[revision].[ext]"
+            artifact "/[organisation]/[module]/releases/download/v[revision]/[module]-[revision].[ext]"
         }
         metadataSources {
             artifact()
@@ -47,7 +47,7 @@ dependencies {
         exclude module: "opus-java"
     }
     include "org.apache.logging.log4j:log4j-slf4j2-impl:2.24.1"
-    include "NoteBlockTool:116:1.1.8-SNAPSHOT@jar" //Kinda cursed but it works
+    include "RaphiMC:NoteBlockTool:1.1.8@jar" //Including the entirety of NoteBlockTool is kinda cursed but it works
     include "org.xerial:sqlite-jdbc:3.47.0.0"
     include "com.bucket4j:bucket4j_jdk17-core:8.14.0"
     include "com.github.ben-manes.caffeine:caffeine:3.1.8"
