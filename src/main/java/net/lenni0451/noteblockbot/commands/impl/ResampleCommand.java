@@ -64,18 +64,20 @@ public class ResampleCommand extends CommandParser {
                     log.info("Resampling of nbs file {} took {}ms", attachment.getFileName(), time);
 
                     event.getHook().editOriginal("Resampling finished in " + (time / 1000) + "s ⏱️").setAttachments(AttachedFile.fromData(resampledData, attachment.getFileName())).queue();
-                    try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.RESAMPLES + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
-                        statement.setLong(1, event.getGuild().getIdLong());
-                        statement.setLong(2, event.getUser().getIdLong());
-                        statement.setString(3, event.getUser().getAsTag());
-                        statement.setString(4, event.getTimeCreated().toString());
-                        statement.setString(5, attachment.getFileName());
-                        statement.setLong(6, attachment.getSize());
-                        statement.setString(7, Hashing.md5().hashBytes(nbsData).toString());
-                        statement.setLong(8, time);
-                        statement.execute();
-                    } catch (Throwable t) {
-                        log.error("An error occurred while saving the midi conversion", t);
+                    if (Config.logInteractions) {
+                        try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.RESAMPLES + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            statement.setLong(1, event.getGuild().getIdLong());
+                            statement.setLong(2, event.getUser().getIdLong());
+                            statement.setString(3, event.getUser().getAsTag());
+                            statement.setString(4, event.getTimeCreated().toString());
+                            statement.setString(5, attachment.getFileName());
+                            statement.setLong(6, attachment.getSize());
+                            statement.setString(7, Hashing.md5().hashBytes(nbsData).toString());
+                            statement.setLong(8, time);
+                            statement.execute();
+                        } catch (Throwable t) {
+                            log.error("An error occurred while saving the midi conversion", t);
+                        }
                     }
                 } catch (Throwable t) {
                     log.error("An error occurred while resampling the nbs file", t);

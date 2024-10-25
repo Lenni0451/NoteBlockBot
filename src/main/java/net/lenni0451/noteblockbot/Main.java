@@ -15,9 +15,12 @@ import net.lenni0451.noteblockbot.data.Config;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.listener.MessageListener;
 import net.lenni0451.noteblockbot.task.TaskQueue;
+import net.lenni0451.optconfig.ConfigLoader;
+import net.lenni0451.optconfig.provider.ConfigProvider;
 import net.raphimc.noteblocktool.audio.SoundMap;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 
@@ -39,8 +42,8 @@ public class Main {
             log.error("Please enter a valid token in the token.txt file");
             return;
         }
-        Config.load();
-        SoundMap.reload(new File("Sounds"));
+        loadConfig();
+        SoundMap.reload(new File("Sounds")); //Load all custom instruments
 
         taskQueue = new TaskQueue();
         db = new SQLiteDB("data.db");
@@ -49,6 +52,12 @@ public class Main {
                 .build().awaitReady();
         registerCommands();
         ApiNotifier.run();
+    }
+
+    private static void loadConfig() throws IOException {
+        ConfigLoader<Config> loader = new ConfigLoader<>(Config.class);
+        loader.getConfigOptions().setRewriteConfig(true).setResetInvalidOptions(true);
+        loader.loadStatic(ConfigProvider.file(new File("config.yml")));
     }
 
     private static void registerCommands() {

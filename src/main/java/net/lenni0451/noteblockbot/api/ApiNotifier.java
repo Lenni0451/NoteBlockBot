@@ -141,7 +141,7 @@ public class ApiNotifier {
                 statement.executeBatch();
             }
         }
-        log.info("Sent notification");
+        log.info("Sent notifications");
     }
 
 }

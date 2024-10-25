@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.lenni0451.noteblockbot.Main;
+import net.lenni0451.noteblockbot.data.Config;
 import net.lenni0451.noteblockbot.data.RateLimiter;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.export.Mp3Encoder;
@@ -80,17 +81,19 @@ public class MessageListener extends ListenerAdapter {
             String songName = fileName.substring(0, fileName.length() - 4);
             if (!song.getHeader().getTitle().isBlank()) songName = song.getHeader().getTitle();
             message.replyFiles(FileUpload.fromData(mp3Data, songName + ".mp3")).setContent(info).queue();
-            try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MP3_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"Source\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
-                statement.setLong(1, message.getGuild().getIdLong());
-                statement.setLong(2, message.getAuthor().getIdLong());
-                statement.setString(3, message.getAuthor().getAsTag());
-                statement.setString(4, message.getTimeCreated().toString());
-                statement.setInt(5, source.ordinal());
-                statement.setString(6, fileName);
-                statement.setInt(7, songData.length);
-                statement.setString(8, Hashing.md5().hashBytes(songData).toString());
-                statement.setLong(9, System.currentTimeMillis() - start);
-                statement.execute();
+            if (Config.logInteractions) {
+                try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MP3_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"Source\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    statement.setLong(1, message.getGuild().getIdLong());
+                    statement.setLong(2, message.getAuthor().getIdLong());
+                    statement.setString(3, message.getAuthor().getAsTag());
+                    statement.setString(4, message.getTimeCreated().toString());
+                    statement.setInt(5, source.ordinal());
+                    statement.setString(6, fileName);
+                    statement.setInt(7, songData.length);
+                    statement.setString(8, Hashing.md5().hashBytes(songData).toString());
+                    statement.setLong(9, System.currentTimeMillis() - start);
+                    statement.execute();
+                }
             }
         } catch (Throwable t) {
             log.error("Failed to render song", t);

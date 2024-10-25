@@ -1,23 +1,16 @@
 package net.lenni0451.noteblockbot.data;
 
-import net.lenni0451.optconfig.ConfigLoader;
 import net.lenni0451.optconfig.annotations.Description;
 import net.lenni0451.optconfig.annotations.OptConfig;
 import net.lenni0451.optconfig.annotations.Option;
 import net.lenni0451.optconfig.annotations.Section;
-import net.lenni0451.optconfig.provider.ConfigProvider;
-
-import java.io.File;
-import java.io.IOException;
 
 @OptConfig
 public class Config {
 
-    public static void load() throws IOException {
-        ConfigLoader<Config> loader = new ConfigLoader<>(Config.class);
-        loader.getConfigOptions().setRewriteConfig(true).setResetInvalidOptions(true);
-        loader.loadStatic(ConfigProvider.file(new File("config.yml")));
-    }
+    @Option
+    @Description({"Log all user interactions with the bot", "The logs are written into the sqlite database", "Currently they are not used but later they could be used for statistics"})
+    public static boolean logInteractions = true;
 
     @Section(name = "SongLimits")
     public static class SongLimits {
