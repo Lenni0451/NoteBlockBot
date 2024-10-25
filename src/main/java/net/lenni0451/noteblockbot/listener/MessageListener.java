@@ -29,6 +29,8 @@ import java.util.regex.Pattern;
 public class MessageListener extends ListenerAdapter {
 
     private static final Emoji CALCULATING = Emoji.fromUnicode("⏱️");
+    private static final Emoji RATE_LIMITED = Emoji.fromUnicode("🐌");
+    private static final Emoji ERROR = Emoji.fromUnicode("❌");
     private static final Pattern URL_PATTERN = Pattern.compile("https?://\\S*");
     private static final Pattern NOTEBLOCK_WORLD_PATTERN = Pattern.compile("https://noteblock\\.world/song/([^/]+)");
 
@@ -50,8 +52,12 @@ public class MessageListener extends ListenerAdapter {
                 .filter(attachment -> attachment.getFileExtension().equalsIgnoreCase("nbs"))
                 .toList();
         for (Message.Attachment attachment : nbsFiles) {
-            if (!RateLimiter.tryUser(event.getAuthor().getIdLong())) continue;
-            if (!RateLimiter.tryGuild(event.getGuild().getIdLong())) continue;
+            if (!RateLimiter.tryUser(event.getAuthor().getIdLong()) || !RateLimiter.tryGuild(event.getGuild().getIdLong())) {
+                if (tasks.stream().noneMatch(t -> t instanceof SendRateLimitReactionTask)) {
+                    tasks.add(new SendRateLimitReactionTask(event.getMessage()));
+                }
+                continue;
+            }
 
             log.info("User {} uploaded song {}", event.getAuthor().getAsTag(), attachment.getFileName());
             tasks.add(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl(), SongSource.ATTACHMENT));
@@ -62,8 +68,12 @@ public class MessageListener extends ListenerAdapter {
         String rawMessage = event.getMessage().getContentRaw();
         List<String> ids = NOTEBLOCK_WORLD_PATTERN.matcher(rawMessage).results().map(match -> match.group(1)).toList();
         for (String id : ids) {
-            if (!RateLimiter.tryUser(event.getAuthor().getIdLong())) continue;
-            if (!RateLimiter.tryGuild(event.getGuild().getIdLong())) continue;
+            if (!RateLimiter.tryUser(event.getAuthor().getIdLong()) || !RateLimiter.tryGuild(event.getGuild().getIdLong())) {
+                if (tasks.stream().noneMatch(t -> t instanceof SendRateLimitReactionTask)) {
+                    tasks.add(new SendRateLimitReactionTask(event.getMessage()));
+                }
+                continue;
+            }
 
             String downloadUrl = "https://api.noteblock.world/api/v1/song/" + id + "/download?src=downloadButton";
             tasks.add(() -> this.processSong(event.getMessage(), id + ".nbs", downloadUrl, SongSource.NOTEBLOCK_WORLD));
@@ -97,6 +107,15 @@ public class MessageListener extends ListenerAdapter {
             }
         } catch (Throwable t) {
             log.error("Failed to render song", t);
+            message.addReaction(ERROR).queue();
+        }
+    }
+
+
+    private record SendRateLimitReactionTask(Message message) implements Runnable {
+        @Override
+        public void run() {
+            this.message.addReaction(RATE_LIMITED).queue();
         }
     }
 
