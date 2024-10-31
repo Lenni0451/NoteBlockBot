@@ -52,7 +52,7 @@ public class ApiNotifier {
     public static void run() {
         Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
             try {
-                log.info("Checking for new songs...");
+                log.debug("Checking for new songs...");
                 List<JSONObject> newSongs = fetchNewSongs();
                 if (!newSongs.isEmpty()) {
                     for (JSONObject apiObject : newSongs) {
@@ -61,7 +61,7 @@ public class ApiNotifier {
                     lastUpdate = Instant.now();
                     Files.writeString(new File("lastUpdate.txt").toPath(), String.valueOf(lastUpdate.toEpochMilli()));
                 }
-                log.info("Done!");
+                log.debug("Done!");
             } catch (Throwable t) {
                 log.error("Failed to fetch api", t);
             }
@@ -72,7 +72,7 @@ public class ApiNotifier {
         List<JSONObject> newSongs = new ArrayList<>();
         PAGE_LOOP:
         for (int page = 1; newSongs.size() % 10 == 0; page++) {
-            log.info("Fetching page {}...", page);
+            log.debug("Fetching page {}...", page);
             HttpResponse response = NetUtils.get(API_URL.replace("{PAGE}", String.valueOf(page)));
             JSONArray songs = new JSONArray(response.getContentAsString());
             for (int i = 0; i < songs.length(); i++) {
@@ -109,6 +109,7 @@ public class ApiNotifier {
         embed.setUrl("https://noteblock.world/song/" + song.getString("publicId"));
         embed.setAuthor(song.getJSONObject("uploader").getString("username"), null, song.getJSONObject("uploader").getString("profileImage"));
 
+        int count = 0;
         Set<Long> toRemove = new HashSet<>();
         try (PreparedStatement statement = Main.getDb().prepare("SELECT * FROM " + SQLiteDB.UPLOAD_NOTIFICATION)) {
             try (ResultSet result = statement.executeQuery()) {
@@ -129,6 +130,7 @@ public class ApiNotifier {
                         continue;
                     }
                     textChannel.sendMessageEmbeds(embed.build()).setFiles(FileUpload.fromData(nbsData, songName + ".nbs"), FileUpload.fromData(mp3Data, songName + ".mp3")).queue();
+                    count++;
                 }
             }
         }
@@ -141,7 +143,7 @@ public class ApiNotifier {
                 statement.executeBatch();
             }
         }
-        log.info("Sent notifications");
+        log.info("Sent {} notifications", count);
     }
 
 }
