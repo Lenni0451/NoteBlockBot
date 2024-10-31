@@ -128,7 +128,7 @@ public class ApiNotifier {
                         toRemove.add(guildId);
                         continue;
                     }
-                    textChannel.sendMessageEmbeds(embed.build()).setFiles(FileUpload.fromData(mp3Data, songName + ".mp3")).queue();
+                    textChannel.sendMessageEmbeds(embed.build()).setFiles(FileUpload.fromData(nbsData, songName + ".nbs"), FileUpload.fromData(mp3Data, songName + ".mp3")).queue();
                 }
             }
         }
