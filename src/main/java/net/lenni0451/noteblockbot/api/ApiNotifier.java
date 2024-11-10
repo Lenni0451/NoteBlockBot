@@ -58,12 +58,15 @@ public class ApiNotifier {
                     for (JSONObject apiObject : newSongs) {
                         sendEmbed(apiObject);
                     }
-                    lastUpdate = Instant.now();
-                    Files.writeString(new File("lastUpdate.txt").toPath(), String.valueOf(lastUpdate.toEpochMilli()));
                 }
                 log.debug("Done!");
             } catch (Throwable t) {
                 log.error("Failed to fetch api", t);
+            }
+            try {
+                Files.writeString(new File("lastUpdate.txt").toPath(), String.valueOf(lastUpdate.toEpochMilli()));
+            } catch (Throwable t) {
+                log.error("Failed to save last update time", t);
             }
         }, 0, 1, TimeUnit.HOURS);
     }
@@ -144,6 +147,7 @@ public class ApiNotifier {
             }
         }
         log.info("Sent {} notifications", count);
+        lastUpdate = ZonedDateTime.parse(song.getString("createdAt"), DateTimeFormatter.ISO_DATE_TIME).toInstant();
     }
 
 }
