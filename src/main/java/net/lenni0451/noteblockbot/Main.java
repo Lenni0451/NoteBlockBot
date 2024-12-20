@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.lenni0451.noteblockbot.commands.CommandParser;
-import net.lenni0451.noteblockbot.commands.impl.AdminCommands;
 import net.lenni0451.noteblockbot.commands.impl.MidiConverterCommand;
 import net.lenni0451.noteblockbot.commands.impl.ResampleCommand;
 import net.lenni0451.noteblockbot.data.Config;
@@ -16,7 +15,6 @@ import net.lenni0451.noteblockbot.listener.MessageListener;
 import net.lenni0451.noteblockbot.task.TaskQueue;
 import net.lenni0451.optconfig.ConfigLoader;
 import net.lenni0451.optconfig.provider.ConfigProvider;
-import net.raphimc.noteblocktool.audio.SoundMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +40,6 @@ public class Main {
             return;
         }
         loadConfig();
-        SoundMap.reload(new File("Sounds")); //Load all custom instruments
 
         taskQueue = new TaskQueue();
         db = new SQLiteDB("data.db");
@@ -61,7 +58,6 @@ public class Main {
     private static void registerCommands() {
         CommandListUpdateAction commands = jda.updateCommands();
         List<CommandParser> commandParsers = List.of(
-                new AdminCommands(),
                 new MidiConverterCommand(),
                 new ResampleCommand()
         );

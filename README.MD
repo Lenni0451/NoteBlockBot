@@ -1,25 +1,11 @@
 # NoteBlockBot
-A bot capable of notifying about new uploads on noteblock.world, rendering and modifying nbs files.
+A Discord bot capable of rendering and modifying nbs files.
 
 ## Features
-<details>
-<summary>Announcing new uploads to noteblock.world in a dedicated channel</summary>
-
-![alt text](images/announcement.png)
-
-</details>
-
 <details>
 <summary>Converting sent nbs files to mp3 for easier listening</summary>
 
 ![alt text](images/converting_nbs.png)
-
-</details>
-
-<details>
-<summary>Previewing songs from noteblock.world</summary>
-
-![alt text](images/preview.png)
 
 </details>
 

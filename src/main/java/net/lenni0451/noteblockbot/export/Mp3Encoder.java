@@ -6,17 +6,20 @@ import net.raphimc.noteblocklib.format.nbs.NbsSong;
 import net.raphimc.noteblocklib.format.nbs.model.NbsNote;
 import net.raphimc.noteblocklib.model.SongView;
 import net.raphimc.noteblocklib.util.SongResampler;
+import net.raphimc.noteblocktool.audio.SoundMap;
 import net.raphimc.noteblocktool.audio.export.AudioExporter;
 import net.raphimc.noteblocktool.audio.export.LameLibrary;
 
 import javax.sound.sampled.AudioFormat;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 
 public class Mp3Encoder {
 
     private static final AudioFormat FORMAT = new AudioFormat(48000, 16, 2, true, false);
 
-    public static byte[] encode(final NbsSong song) throws Exception {
+    public static byte[] encode(final NbsSong song, final File soundsFolder) throws Exception {
+        SoundMap.reload(soundsFolder); //Load all custom instruments
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             byte[] samples = sample(song);
             int numSamples = samples.length / FORMAT.getFrameSize();

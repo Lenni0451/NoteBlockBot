@@ -10,12 +10,10 @@ import java.util.Map;
 
 public class SQLiteDB {
 
-    public static final String UPLOAD_NOTIFICATION = "NoteBlockWorldUploadNotificationChannels";
     public static final String MP3_CONVERSIONS = "Mp3Conversions";
     public static final String MIDI_CONVERSIONS = "MidiConversions";
     public static final String RESAMPLES = "Resamples";
     private static final Map<String, String> TABLES = Map.of(
-            UPLOAD_NOTIFICATION, "(\"GuildId\" INTEGER NOT NULL UNIQUE, \"ChannelId\" INTEGER NOT NULL, PRIMARY KEY(\"GuildId\"))",
             MP3_CONVERSIONS, "(\"id\" INTEGER UNIQUE, \"GuildId\" INTEGER NOT NULL, \"UserId\" INTEGER NOT NULL, \"UserName\" TEXT NOT NULL, \"Date\" TEXT NOT NULL, \"Source\" INTEGER NOT NULL, \"FileName\" TEXT NOT NULL, \"FileSize\" INTEGER NOT NULL, \"FileHash\" TEXT NOT NULL, \"ConversionDuration\" INTEGER NOT NULL, PRIMARY KEY(\"id\" AUTOINCREMENT))",
             MIDI_CONVERSIONS, "(\"id\" INTEGER UNIQUE, \"GuildId\" INTEGER NOT NULL, \"UserId\" INTEGER NOT NULL, \"UserName\" TEXT NOT NULL, \"Date\" TEXT NOT NULL, \"FileName\" TEXT NOT NULL, \"FileSize\" INTEGER NOT NULL, \"FileHash\" TEXT NOT NULL, \"ConversionDuration\" INTEGER NOT NULL, PRIMARY KEY(\"id\" AUTOINCREMENT))",
             RESAMPLES, "(\"id\" INTEGER UNIQUE, \"GuildId\" INTEGER NOT NULL, \"UserId\" INTEGER NOT NULL, \"UserName\" TEXT NOT NULL, \"Date\" TEXT NOT NULL, \"FileName\" TEXT NOT NULL, \"FileSize\" INTEGER NOT NULL, \"FileHash\" TEXT NOT NULL, \"ConversionDuration\" INTEGER NOT NULL, PRIMARY KEY(\"id\" AUTOINCREMENT));"

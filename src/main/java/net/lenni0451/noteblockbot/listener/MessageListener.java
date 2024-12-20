@@ -14,12 +14,12 @@ import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.export.Mp3Encoder;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.lenni0451.noteblockbot.utils.SongInfo;
-import net.lenni0451.noteblockbot.utils.SongSource;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
 import net.raphimc.noteblocklib.format.nbs.NbsSong;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,14 +32,12 @@ public class MessageListener extends ListenerAdapter {
     private static final Emoji RATE_LIMITED = Emoji.fromUnicode("🐌");
     private static final Emoji ERROR = Emoji.fromUnicode("❌");
     private static final Pattern URL_PATTERN = Pattern.compile("https?://\\S*");
-    private static final Pattern NOTEBLOCK_WORLD_PATTERN = Pattern.compile("https://noteblock\\.world/song/([^/]+)");
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         if (event.getAuthor().isBot()) return;
         List<Runnable> tasks = new ArrayList<>();
         this.handleNbsAttachments(event, tasks);
-        this.handleNoteBlockWorldLinks(event, tasks);
         if (!tasks.isEmpty()) {
             event.getMessage().addReaction(CALCULATING).queue();
             Main.getTaskQueue().add(event.getGuild().getIdLong(), tasks, () -> event.getMessage().removeReaction(CALCULATING).queue());
@@ -60,32 +58,16 @@ public class MessageListener extends ListenerAdapter {
             }
 
             log.info("User {} uploaded song {}", event.getAuthor().getAsTag(), attachment.getFileName());
-            tasks.add(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl(), SongSource.ATTACHMENT));
+            tasks.add(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl()));
         }
     }
 
-    private void handleNoteBlockWorldLinks(final MessageReceivedEvent event, final List<Runnable> tasks) {
-        String rawMessage = event.getMessage().getContentRaw();
-        List<String> ids = NOTEBLOCK_WORLD_PATTERN.matcher(rawMessage).results().map(match -> match.group(1)).toList();
-        for (String id : ids) {
-            if (!RateLimiter.tryUser(event.getAuthor().getIdLong()) || !RateLimiter.tryGuild(event.getGuild().getIdLong())) {
-                if (tasks.stream().noneMatch(t -> t instanceof SendRateLimitReactionTask)) {
-                    tasks.add(new SendRateLimitReactionTask(event.getMessage()));
-                }
-                continue;
-            }
-
-            String downloadUrl = "https://api.noteblock.world/api/v1/song/" + id + "/download?src=downloadButton";
-            tasks.add(() -> this.processSong(event.getMessage(), id + ".nbs", downloadUrl, SongSource.NOTEBLOCK_WORLD));
-        }
-    }
-
-    private void processSong(final Message message, final String fileName, final String url, final SongSource source) {
+    private void processSong(final Message message, final String fileName, final String url) {
         try {
             long start = System.currentTimeMillis();
             byte[] songData = NetUtils.get(url).getContent();
             NbsSong song = (NbsSong) NoteBlockLib.readSong(songData, SongFormat.NBS);
-            byte[] mp3Data = Mp3Encoder.encode(song);
+            byte[] mp3Data = Mp3Encoder.encode(song, new File("Sounds"));
             String info = SongInfo.fromSong(song);
             info = URL_PATTERN.matcher(info).replaceAll("<$0>");
             String songName = fileName.substring(0, fileName.length() - 4);
@@ -97,7 +79,7 @@ public class MessageListener extends ListenerAdapter {
                     statement.setLong(2, message.getAuthor().getIdLong());
                     statement.setString(3, message.getAuthor().getAsTag());
                     statement.setString(4, message.getTimeCreated().toString());
-                    statement.setInt(5, source.ordinal());
+                    statement.setInt(5, 0); //0=Attachment 1=NoteblockWorld
                     statement.setString(6, fileName);
                     statement.setInt(7, songData.length);
                     statement.setString(8, Hashing.md5().hashBytes(songData).toString());

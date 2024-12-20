@@ -1,8 +1,10 @@
 package net.lenni0451.noteblockbot.export;
 
 import net.raphimc.audiomixer.AudioMixer;
-import net.raphimc.audiomixer.sound.source.MonoSound;
-import net.raphimc.audiomixer.sound.source.StaticStereoSound;
+import net.raphimc.audiomixer.pcmsource.impl.MonoIntPcmSource;
+import net.raphimc.audiomixer.pcmsource.impl.StereoIntPcmSource;
+import net.raphimc.audiomixer.sound.impl.pcm.OptimizedMonoSound;
+import net.raphimc.audiomixer.sound.impl.pcm.StereoSound;
 import net.raphimc.noteblocklib.model.SongView;
 import net.raphimc.noteblocktool.audio.export.impl.AudioMixerAudioExporter;
 
@@ -23,11 +25,12 @@ public class MultithreadedAudioMixerAudioExporter extends AudioMixerAudioExporte
     private int currentMixer = 0;
 
     public MultithreadedAudioMixerAudioExporter(final SongView<?> songView, final AudioFormat format, final float masterVolume, final Consumer<Float> progressConsumer) {
-        super(songView, format, masterVolume, progressConsumer);
+        super(songView, format, masterVolume, false, progressConsumer);
 
         final int mixSampleCount = this.samplesPerTick * format.getChannels();
         for (int i = 0; i < this.audioMixers.length; i++) {
-            this.audioMixers[i] = new AudioMixer(format, 8192 / this.audioMixers.length);
+            this.audioMixers[i] = new AudioMixer(format);
+            this.audioMixers[i].getMasterMixSound().setMaxSounds(8192 / this.audioMixers.length);
         }
         for (int i = 0; i < this.threadPool.getCorePoolSize(); i++) {
             final int mixerIndex = i;
@@ -48,7 +51,7 @@ public class MultithreadedAudioMixerAudioExporter extends AudioMixerAudioExporte
     protected void processSound(String sound, float pitch, float volume, float panning) {
         if (!this.sounds.containsKey(sound)) return;
 
-        this.audioMixers[this.currentMixer].playSound(new MonoSound(this.sounds.get(sound), pitch, volume, panning));
+        this.audioMixers[this.currentMixer].playSound(new OptimizedMonoSound(new MonoIntPcmSource(this.sounds.get(sound)), pitch, volume, panning));
         this.currentMixer = (this.currentMixer + 1) % this.audioMixers.length;
     }
 
@@ -61,10 +64,10 @@ public class MultithreadedAudioMixerAudioExporter extends AudioMixerAudioExporte
             throw new RuntimeException(e);
         }
         for (int[] threadSamples : this.threadSamples) {
-            this.audioMixer.playSound(new StaticStereoSound(threadSamples));
+            this.audioMixer.playSound(new StereoSound(new StereoIntPcmSource(threadSamples)));
         }
         super.postTick();
-        if (this.audioMixer.getActiveSounds() != 0) {
+        if (this.audioMixer.getMasterMixSound().getActiveSounds() != 0) {
             throw new IllegalStateException("Mixer still has active sounds after mixing");
         }
     }
