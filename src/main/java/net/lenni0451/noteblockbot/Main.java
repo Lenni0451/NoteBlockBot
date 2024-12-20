@@ -6,7 +6,6 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
-import net.lenni0451.noteblockbot.api.ApiNotifier;
 import net.lenni0451.noteblockbot.commands.CommandParser;
 import net.lenni0451.noteblockbot.commands.impl.AdminCommands;
 import net.lenni0451.noteblockbot.commands.impl.MidiConverterCommand;
@@ -51,7 +50,6 @@ public class Main {
                 .addEventListeners(new MessageListener())
                 .build().awaitReady();
         registerCommands();
-        ApiNotifier.run();
     }
 
     private static void loadConfig() throws IOException {
