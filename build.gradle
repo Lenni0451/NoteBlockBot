@@ -43,7 +43,7 @@ dependencies {
     include "net.lenni0451.commons:httpclient:1.6.1"
     include "net.lenni0451:optconfig:1.1.0"
     include "org.json:json:20240303"
-    include("net.dv8tion:JDA:5.2.1") {
+    include("net.dv8tion:JDA:5.2.2") {
         exclude module: "opus-java"
     }
     include "org.apache.logging.log4j:log4j-slf4j2-impl:2.24.3"
