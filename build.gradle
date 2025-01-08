@@ -42,7 +42,7 @@ dependencies {
     compileOnly(annotationProcessor("org.projectlombok:lombok:1.18.36"))
     include "net.lenni0451.commons:httpclient:1.6.1"
     include "net.lenni0451:optconfig:1.1.0"
-    include "org.json:json:20241224"
+    include "org.json:json:20250107"
     include("net.dv8tion:JDA:5.2.2") {
         exclude module: "opus-java"
     }
