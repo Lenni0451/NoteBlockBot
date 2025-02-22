@@ -1,7 +1,7 @@
 package net.lenni0451.noteblockbot.utils;
 
 import net.dv8tion.jda.api.utils.MarkdownSanitizer;
-import net.raphimc.noteblocklib.format.nbs.NbsSong;
+import net.raphimc.noteblocklib.format.nbs.model.NbsSong;
 import net.raphimc.noteblocklib.util.SongUtil;
 import org.json.JSONObject;
 
@@ -15,9 +15,9 @@ public class SongInfo {
         Map<String, String> metadata = new LinkedHashMap<>();
         metadata.put("Description", apiObject.optString("description"));
         metadata.put("Original author", apiObject.optString("originalAuthor"));
-        metadata.put("Notes", String.valueOf(SongUtil.getNoteCount(song.getView())));
-        int vanillaInstruments = SongUtil.getUsedVanillaInstruments(song.getView()).size();
-        int customInstruments = SongUtil.getUsedCustomInstruments(song.getView()).size();
+        metadata.put("Notes", String.valueOf(song.getNotes().getNoteCount()));
+        int vanillaInstruments = SongUtil.getUsedVanillaInstruments(song).size();
+        int customInstruments = SongUtil.getUsedNbsCustomInstruments(song).size();
         if (vanillaInstruments == 0) {
             metadata.put("Instruments", customInstruments + " *(custom)*");
         } else if (customInstruments == 0) {
@@ -25,21 +25,20 @@ public class SongInfo {
         } else {
             metadata.put("Instruments", (vanillaInstruments + customInstruments) + " *(" + vanillaInstruments + " vanilla, " + customInstruments + " custom)*");
         }
-        metadata.put("Speed", String.format("%.2f t/s", song.getView().getSpeed()));
-        int length = (int) Math.ceil(song.getView().getLength() / song.getView().getSpeed());
-        metadata.put("Length", String.format("%02d:%02d:%02d", length / 3600, (length / 60) % 60, length % 60));
+        metadata.put("Speed", song.getTempoEvents().getHumanReadableTempoRange() + " t/s");
+        metadata.put("Length", song.getHumanReadableLength());
         return format(metadata);
     }
 
     public static String fromSong(final NbsSong song) {
         Map<String, String> metadata = new LinkedHashMap<>();
-        metadata.put("Title", sanitize(song.getHeader().getTitle()));
-        metadata.put("Description", sanitize(song.getHeader().getDescription()));
-        metadata.put("Author", sanitize(song.getHeader().getAuthor()));
-        metadata.put("Original author", sanitize(song.getHeader().getOriginalAuthor()));
-        metadata.put("Notes", String.valueOf(SongUtil.getNoteCount(song.getView())));
-        int vanillaInstruments = SongUtil.getUsedVanillaInstruments(song.getView()).size();
-        int customInstruments = SongUtil.getUsedCustomInstruments(song.getView()).size();
+        metadata.put("Title", sanitize(song.getTitleOr("")));
+        metadata.put("Description", sanitize(song.getDescriptionOr("")));
+        metadata.put("Author", sanitize(song.getAuthorOr("")));
+        metadata.put("Original author", sanitize(song.getOriginalAuthorOr("")));
+        metadata.put("Notes", String.valueOf(song.getNotes().getNoteCount()));
+        int vanillaInstruments = SongUtil.getUsedVanillaInstruments(song).size();
+        int customInstruments = SongUtil.getUsedNbsCustomInstruments(song).size();
         if (vanillaInstruments == 0) {
             metadata.put("Instruments", customInstruments + " *(custom)*");
         } else if (customInstruments == 0) {
@@ -47,9 +46,8 @@ public class SongInfo {
         } else {
             metadata.put("Instruments", (vanillaInstruments + customInstruments) + " *(" + vanillaInstruments + " vanilla, " + customInstruments + " custom)*");
         }
-        metadata.put("Speed", String.format("%.2f t/s", song.getView().getSpeed()));
-        int length = (int) Math.ceil(song.getView().getLength() / song.getView().getSpeed());
-        metadata.put("Length", String.format("%02d:%02d:%02d", length / 3600, (length / 60) % 60, length % 60));
+        metadata.put("Speed", song.getTempoEvents().getHumanReadableTempoRange() + " t/s");
+        metadata.put("Length", song.getHumanReadableLength());
         return format(metadata);
     }
 

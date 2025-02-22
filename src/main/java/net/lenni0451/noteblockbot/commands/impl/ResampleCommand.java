@@ -17,12 +17,12 @@ import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
-import net.raphimc.noteblocklib.format.nbs.NbsSong;
-import net.raphimc.noteblocklib.format.nbs.model.NbsHeader;
+import net.raphimc.noteblocklib.format.nbs.model.NbsSong;
+import net.raphimc.noteblocklib.model.Song;
 import net.raphimc.noteblocklib.util.SongResampler;
-import net.raphimc.noteblocklib.util.SongUtil;
 import net.raphimc.noteblocktool.util.MinecraftOctaveClamp;
 
+import java.io.ByteArrayOutputStream;
 import java.sql.PreparedStatement;
 import java.util.List;
 
@@ -51,19 +51,20 @@ public class ResampleCommand extends CommandParser {
                     byte[] nbsData = NetUtils.get(attachment.getUrl()).getContent();
                     NbsSong song = (NbsSong) NoteBlockLib.readSong(nbsData, SongFormat.NBS);
                     if (octaveClamp != null) {
-                        SongUtil.applyToAllNotes(song.getView(), octaveClamp::correctNote);
+                        song.getNotes().forEach(octaveClamp::correctNote);
                     }
                     if (speed != null) {
-                        SongResampler.applyNbsTempoChangers(song, song.getView());
-                        SongResampler.changeTickSpeed(song.getView(), speed);
+                        SongResampler.changeTickSpeed(song, speed);
                     }
-                    NbsSong resampledSong = (NbsSong) NoteBlockLib.createSongFromView(song.getView(), SongFormat.NBS);
-                    this.copyHeader(song.getHeader(), resampledSong.getHeader());
-                    byte[] resampledData = NoteBlockLib.writeSong(resampledSong);
+                    NbsSong resampledSong = (NbsSong) NoteBlockLib.convertSong(song, SongFormat.NBS);
+
+                    ByteArrayOutputStream resampledData = new ByteArrayOutputStream();
+                    this.applyDescription(resampledSong);
+                    NoteBlockLib.writeSong(resampledSong, resampledData);
                     time = System.currentTimeMillis() - time;
                     log.info("Resampling of nbs file {} took {}ms", attachment.getFileName(), time);
 
-                    event.getHook().editOriginal("Resampling finished in " + (time / 1000) + "s ⏱️").setAttachments(AttachedFile.fromData(resampledData, attachment.getFileName())).queue();
+                    event.getHook().editOriginal("Resampling finished in " + (time / 1000) + "s ⏱️").setAttachments(AttachedFile.fromData(resampledData.toByteArray(), attachment.getFileName())).queue();
                     if (Config.logInteractions) {
                         try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.RESAMPLES + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
                             statement.setLong(1, event.getGuild().getIdLong());
@@ -87,28 +88,11 @@ public class ResampleCommand extends CommandParser {
         }
     }
 
-    private void copyHeader(final NbsHeader from, final NbsHeader to) {
-        to.setVersion((byte) Math.max(from.getVersion(), to.getVersion()));
-        to.setAuthor(from.getAuthor());
-        to.setOriginalAuthor(from.getOriginalAuthor());
-        to.setDescription(from.getDescription());
-        to.setAutoSave(from.isAutoSave());
-        to.setAutoSaveInterval(from.getAutoSaveInterval());
-        to.setTimeSignature(from.getTimeSignature());
-        to.setMinutesSpent(from.getMinutesSpent());
-        to.setLeftClicks(from.getLeftClicks());
-        to.setRightClicks(from.getRightClicks());
-        to.setNoteBlocksAdded(from.getNoteBlocksAdded());
-        to.setNoteBlocksRemoved(from.getNoteBlocksRemoved());
-        to.setSourceFileName(from.getSourceFileName());
-        to.setLoop(from.isLoop());
-        to.setMaxLoopCount(from.getMaxLoopCount());
-        to.setLoopStartTick(from.getLoopStartTick());
-
-        String newDescription = from.getDescription();
-        if (!newDescription.isEmpty()) newDescription += "\n";
-        newDescription += "Resampled using NoteBlockBot";
-        to.setDescription(newDescription);
+    private void applyDescription(final Song song) {
+        String description = song.getDescriptionOr("");
+        if (!description.isEmpty()) description += "\n";
+        description += "Resampled using NoteBlockBot";
+        song.setDescription(description);
     }
 
 }

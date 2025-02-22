@@ -16,7 +16,7 @@ import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.lenni0451.noteblockbot.utils.SongInfo;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
-import net.raphimc.noteblocklib.format.nbs.NbsSong;
+import net.raphimc.noteblocklib.format.nbs.model.NbsSong;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -71,7 +71,7 @@ public class MessageListener extends ListenerAdapter {
             String info = SongInfo.fromSong(song);
             info = URL_PATTERN.matcher(info).replaceAll("<$0>");
             String songName = fileName.substring(0, fileName.length() - 4);
-            if (!song.getHeader().getTitle().isBlank()) songName = song.getHeader().getTitle();
+            if (!song.getTitleOr("").isBlank()) songName = song.getTitle();
             message.replyFiles(FileUpload.fromData(mp3Data, songName + ".mp3")).setContent(info).queue();
             if (Config.logInteractions) {
                 try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MP3_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"Source\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {

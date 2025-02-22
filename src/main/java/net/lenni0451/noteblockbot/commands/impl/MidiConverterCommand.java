@@ -19,6 +19,7 @@ import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
 import net.raphimc.noteblocklib.model.Song;
 
+import java.io.ByteArrayOutputStream;
 import java.sql.PreparedStatement;
 import java.util.List;
 
@@ -38,14 +39,15 @@ public class MidiConverterCommand extends CommandParser {
             try {
                 long time = System.currentTimeMillis();
                 byte[] midiData = NetUtils.get(attachment.getUrl()).getContent();
-                Song<?, ?, ?> song = NoteBlockLib.readSong(midiData, SongFormat.MIDI);
-                song = NoteBlockLib.createSongFromView(song.getView(), SongFormat.NBS);
-                byte[] nbsData = NoteBlockLib.writeSong(song);
+                Song song = NoteBlockLib.readSong(midiData, SongFormat.MIDI);
+                song = NoteBlockLib.convertSong(song, SongFormat.NBS);
+                ByteArrayOutputStream nbsData = new ByteArrayOutputStream();
+                NoteBlockLib.writeSong(song, nbsData);
                 time = System.currentTimeMillis() - time;
                 log.info("Conversion of midi file {} took {}ms", attachment.getFileName(), time);
 
                 String fileName = attachment.getFileName().substring(0, attachment.getFileName().length() - attachment.getFileExtension().length() - 1);
-                event.getHook().editOriginal("Conversion finished in " + (time / 1000) + "s ⏱️").setAttachments(AttachedFile.fromData(nbsData, fileName + ".nbs")).queue();
+                event.getHook().editOriginal("Conversion finished in " + (time / 1000) + "s ⏱️").setAttachments(AttachedFile.fromData(nbsData.toByteArray(), fileName + ".nbs")).queue();
                 if (Config.logInteractions) {
                     try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MIDI_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
                         statement.setLong(1, event.getGuild().getIdLong());
