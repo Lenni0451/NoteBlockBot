@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 public class SongInfo {
 
+    private static final JSONObject EMPTY_JSON = new JSONObject();
+
     public static String fromApi(final JSONObject apiObject, final NbsSong song) {
         Map<String, String> metadata = new LinkedHashMap<>();
         metadata.put("Description", apiObject.optString("description"));
@@ -27,6 +29,12 @@ public class SongInfo {
         }
         metadata.put("Speed", song.getTempoEvents().getHumanReadableTempoRange() + " t/s");
         metadata.put("Length", song.getHumanReadableLength());
+        Integer minutesSpent = apiObject.optJSONObject("stats", EMPTY_JSON).optIntegerObject("minutesSpent");
+        if (minutesSpent != null) {
+            String timeSpent = minutesSpent / 60 + "h " + minutesSpent % 60 + "m";
+            metadata.put("Time spent", timeSpent);
+        }
+        metadata.put("Midi file name", apiObject.optJSONObject("stats", EMPTY_JSON).optString("midiFileName"));
         return format(metadata);
     }
 
