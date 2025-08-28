@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -60,7 +61,7 @@ public abstract class CommandParser extends ListenerAdapter {
             for (ArgumentType argument : arguments) {
                 commandData.addOption(argument.arg.type(), argument.arg.name(), argument.arg.description(), argument.required, argument.completionSupplier != null);
             }
-            commandData.setGuildOnly(true).setDefaultPermissions(DefaultMemberPermissions.enabledFor(command.permissions()));
+            commandData.setContexts(InteractionContextType.GUILD).setDefaultPermissions(DefaultMemberPermissions.enabledFor(command.permissions()));
             commands.addCommands(commandData);
 
             method.setAccessible(true);
