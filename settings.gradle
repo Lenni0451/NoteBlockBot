@@ -10,3 +10,5 @@ plugins {
 }
 
 rootProject.name = "NoteBlockBot"
+
+//include(":subproject")

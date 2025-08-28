@@ -1,26 +1,12 @@
 plugins {
     id "java"
-    id "checkstyle"
-}
-
-base {
-    java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-    compileJava.options.encoding = compileTestJava.options.encoding = javadoc.options.encoding = "UTF-8"
-
-    archivesName = project.maven_name ?: rootProject.maven_name
-    group = project.maven_group ?: rootProject.maven_group
-    version = project.maven_version ?: rootProject.maven_version
-}
-
-configurations {
-    include
-
-    implementation.extendsFrom include
-    api.extendsFrom include
+    id "base.java"
+    id "base.application"
+    id "base.checkstyle"
+    id "idea.exclude_run_dir"
 }
 
 repositories {
-    mavenCentral()
     maven {
         name = "lenni0451"
         url = "https://maven.lenni0451.net/everything"
@@ -37,43 +23,20 @@ repositories {
 }
 
 dependencies {
-    compileOnly "com.google.code.findbugs:jsr305:3.0.2"
-    compileOnly "org.jetbrains:annotations:26.0.2"
-    compileOnly(annotationProcessor("org.projectlombok:lombok:1.18.38"))
-    include "net.lenni0451.commons:httpclient:1.7.1"
-    include "net.lenni0451:optconfig:1.1.1"
-    include "org.json:json:20250517"
-    include("net.dv8tion:JDA:6.0.0-preview") {
+    include libs.commonsHttpclient
+    include libs.optconfig
+    include libs.json
+    include(libs.jda) {
         exclude module: "opus-java"
     }
-    include "org.apache.logging.log4j:log4j-slf4j2-impl:2.25.1"
+    include libs.log4j
+    include libs.sqliteJdbc
+    include libs.bucket4j
+    include libs.caffeine
     include "RaphiMC:NoteBlockTool:1.2.2@jar" //Including the entirety of NoteBlockTool is kinda cursed but it works
-    include "org.xerial:sqlite-jdbc:3.50.3.0"
-    include "com.bucket4j:bucket4j_jdk17-core:8.15.0"
-    include "com.github.ben-manes.caffeine:caffeine:3.2.2"
-}
 
-jar {
-    dependsOn configurations.include
-    from {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        configurations.include.collect {
-            zipTree(it)
-        }
-    } {
-        exclude "META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA"
-    }
-
-    manifest {
-        attributes(
-                "Main-Class": "net.lenni0451.noteblockbot.Main",
-                "Multi-Release": "true"
-        )
-    }
+    compileOnly libs.findbugs
+    compileOnly libs.jetbrainsAnnotations
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
 }
-
-checkstyle {
-    toolVersion = "10.16.0" //Latest version for Java 8: 9.3
-    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
-}
-build.dependsOn(check)
