@@ -4,7 +4,7 @@
 findbugs = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 jetbrainsAnnotations = { module = "org.jetbrains:annotations", version = "26.0.2" }
 lombok = { module = "org.projectlombok:lombok", version = "1.18.38" }
-commonsHttpclient = { module = "net.lenni0451.commons:httpclient", version = "1.9.0" }
+commonsHttpclient = { module = "net.lenni0451.commons:httpclient", version = "1.9.1" }
 optconfig = { module = "net.lenni0451:optconfig", version = "1.1.1" }
 json = { module = "org.json:json", version = "20250517" }
 jda = { module = "net.dv8tion:JDA", version = "6.0.0-preview" }
