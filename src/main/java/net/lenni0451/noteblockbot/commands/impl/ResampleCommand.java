@@ -48,7 +48,7 @@ public class ResampleCommand extends CommandParser {
             Main.getTaskQueue().add(event.getGuild().getIdLong(), List.of(() -> {
                 try {
                     long time = System.currentTimeMillis();
-                    byte[] nbsData = NetUtils.get(attachment.getUrl()).getContent();
+                    byte[] nbsData = NetUtils.get(attachment.getUrl()).getContent().getAsBytes();
                     NbsSong song = (NbsSong) NoteBlockLib.readSong(nbsData, SongFormat.NBS);
                     if (octaveClamp != null) {
                         song.getNotes().forEach(octaveClamp::correctNote);

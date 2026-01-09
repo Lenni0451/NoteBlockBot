@@ -38,7 +38,7 @@ public class MidiConverterCommand extends CommandParser {
         Main.getTaskQueue().add(event.getGuild().getIdLong(), List.of(() -> {
             try {
                 long time = System.currentTimeMillis();
-                byte[] midiData = NetUtils.get(attachment.getUrl()).getContent();
+                byte[] midiData = NetUtils.get(attachment.getUrl()).getContent().getAsBytes();
                 Song song = NoteBlockLib.readSong(midiData, SongFormat.MIDI);
                 song = NoteBlockLib.convertSong(song, SongFormat.NBS);
                 ByteArrayOutputStream nbsData = new ByteArrayOutputStream();

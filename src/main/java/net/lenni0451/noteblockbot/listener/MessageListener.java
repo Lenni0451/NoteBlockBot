@@ -65,7 +65,7 @@ public class MessageListener extends ListenerAdapter {
     private void processSong(final Message message, final String fileName, final String url) {
         try {
             long start = System.currentTimeMillis();
-            byte[] songData = NetUtils.get(url).getContent();
+            byte[] songData = NetUtils.get(url).getContent().getAsBytes();
             NbsSong song = (NbsSong) NoteBlockLib.readSong(songData, SongFormat.NBS);
             byte[] mp3Data = Mp3Encoder.encode(song, new File("Sounds"));
             String info = SongInfo.fromSong(song);
