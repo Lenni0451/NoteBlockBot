@@ -4,15 +4,16 @@ import com.sun.jna.Pointer;
 import net.raphimc.audiomixer.util.PcmFloatAudioFormat;
 import net.raphimc.noteblocklib.format.nbs.model.NbsSong;
 import net.raphimc.noteblocktool.audio.SoundMap;
-import net.raphimc.noteblocktool.audio.export.AudioExporter;
-import net.raphimc.noteblocktool.audio.export.LameLibrary;
-import net.raphimc.noteblocktool.audio.export.impl.AudioMixerAudioExporter;
+import net.raphimc.noteblocktool.audio.library.LameLibrary;
+import net.raphimc.noteblocktool.audio.player.impl.SongRenderer;
+import net.raphimc.noteblocktool.audio.system.impl.AudioMixerAudioSystem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 
 public class Mp3Encoder {
 
+    private static final int MAX_SOUNDS = 16384;
     private static final PcmFloatAudioFormat FORMAT = new PcmFloatAudioFormat(48000, 2);
 
     public static byte[] encode(final NbsSong song, final File soundsFolder) throws Exception {
@@ -41,9 +42,10 @@ public class Mp3Encoder {
     }
 
     private static float[] sample(final NbsSong song) throws Exception {
-        AudioExporter exporter = new AudioMixerAudioExporter(song, FORMAT, 1F, false, true, f -> {});
-        exporter.render();
-        return exporter.getSamples();
+        try (SongRenderer renderer = new SongRenderer(song, stringMap -> new AudioMixerAudioSystem(stringMap, MAX_SOUNDS, false, true, FORMAT))) {
+            renderer.setTimingJitter(true);
+            return renderer.renderSong();
+        }
     }
 
 }

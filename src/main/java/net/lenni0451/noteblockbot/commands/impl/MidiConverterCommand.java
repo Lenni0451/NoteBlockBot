@@ -17,7 +17,7 @@ import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
-import net.raphimc.noteblocklib.model.Song;
+import net.raphimc.noteblocklib.model.song.Song;
 
 import java.io.ByteArrayOutputStream;
 import java.sql.PreparedStatement;

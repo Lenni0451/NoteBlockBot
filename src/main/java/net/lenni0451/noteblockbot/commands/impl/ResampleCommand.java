@@ -18,7 +18,7 @@ import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
 import net.raphimc.noteblocklib.format.nbs.model.NbsSong;
-import net.raphimc.noteblocklib.model.Song;
+import net.raphimc.noteblocklib.model.song.Song;
 import net.raphimc.noteblocklib.util.SongResampler;
 import net.raphimc.noteblocktool.util.MinecraftOctaveClamp;
 
