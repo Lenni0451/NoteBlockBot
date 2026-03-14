@@ -42,7 +42,7 @@ public class Mp3Encoder {
     }
 
     private static float[] sample(final NbsSong song) throws Exception {
-        try (SongRenderer renderer = new SongRenderer(song, stringMap -> new AudioMixerAudioSystem(stringMap, MAX_SOUNDS, false, true, FORMAT))) {
+        try (SongRenderer renderer = new SongRenderer(song, stringMap -> new AudioMixerAudioSystem(stringMap, MAX_SOUNDS, true, true, FORMAT))) {
             renderer.setTimingJitter(true);
             return renderer.renderSong();
         }
