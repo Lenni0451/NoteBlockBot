@@ -33,7 +33,7 @@ dependencies {
     include libs.sqliteJdbc
     include libs.bucket4j
     include libs.caffeine
-    include "RaphiMC:NoteBlockTool:1.2.3@jar" //Including the entirety of NoteBlockTool is kinda cursed but it works
+    include "RaphiMC:NoteBlockTool:1.2.4@jar" //Including the entirety of NoteBlockTool is kinda cursed but it works
 
     compileOnly libs.findbugs
     compileOnly libs.jetbrainsAnnotations
