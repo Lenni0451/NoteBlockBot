@@ -5,8 +5,8 @@ import net.raphimc.audiomixer.util.PcmFloatAudioFormat;
 import net.raphimc.noteblocklib.format.nbs.model.NbsSong;
 import net.raphimc.noteblocktool.audio.SoundMap;
 import net.raphimc.noteblocktool.audio.library.LameLibrary;
-import net.raphimc.noteblocktool.audio.player.impl.SongRenderer;
-import net.raphimc.noteblocktool.audio.system.impl.AudioMixerAudioSystem;
+import net.raphimc.noteblocktool.audio.renderer.SongRenderer;
+import net.raphimc.noteblocktool.audio.renderer.impl.ProgressSongRenderer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -56,7 +56,7 @@ public class Mp3Encoder {
     }
 
     private static float[] sample(final NbsSong song) throws Exception {
-        try (SongRenderer renderer = new SongRenderer(song, stringMap -> new AudioMixerAudioSystem(stringMap, MAX_SOUNDS, true, true, FORMAT))) {
+        try (SongRenderer renderer = new ProgressSongRenderer(song, MAX_SOUNDS, true, true, FORMAT, progress -> {})) {
             renderer.setTimingJitter(true);
             return renderer.renderSong();
         }
