@@ -1,7 +1,7 @@
 package net.lenni0451.noteblockbot.export;
 
 import com.sun.jna.Pointer;
-import net.raphimc.audiomixer.util.PcmFloatAudioFormat;
+import net.raphimc.audiomixer.util.FloatAudioFormat;
 import net.raphimc.noteblocklib.format.nbs.model.NbsSong;
 import net.raphimc.noteblocktool.audio.SoundMap;
 import net.raphimc.noteblocktool.audio.library.LameLibrary;
@@ -14,7 +14,7 @@ import java.io.File;
 public class Mp3Encoder {
 
     private static final int MAX_SOUNDS = 16384;
-    private static final PcmFloatAudioFormat FORMAT = new PcmFloatAudioFormat(48000, 2);
+    private static final FloatAudioFormat FORMAT = new FloatAudioFormat(48000, 2);
     private static final int QUALITY = 50;
 
     public static byte[] encode(final NbsSong song, final File soundsFolder) throws Exception {
@@ -24,9 +24,9 @@ public class Mp3Encoder {
 
             Pointer lame = LameLibrary.INSTANCE.lame_init();
             if (lame == null) throw new IllegalStateException("Failed to initialize LAME encoder");
-            int result = LameLibrary.INSTANCE.lame_set_in_samplerate(lame, (int) FORMAT.getSampleRate());
+            int result = LameLibrary.INSTANCE.lame_set_in_samplerate(lame, (int) FORMAT.sampleRate());
             if (result < 0) throw new IllegalStateException("Failed to set sample rate: " + result);
-            result = LameLibrary.INSTANCE.lame_set_num_channels(lame, FORMAT.getChannels());
+            result = LameLibrary.INSTANCE.lame_set_num_channels(lame, FORMAT.channels());
             if (result < 0) throw new IllegalStateException("Failed to set channels: " + result);
             result = LameLibrary.INSTANCE.lame_set_VBR(lame, LameLibrary.vbr_default);
             if (result < 0) throw new IllegalStateException("Failed to set VBR mode: " + result);
@@ -35,7 +35,7 @@ public class Mp3Encoder {
             result = LameLibrary.INSTANCE.lame_init_params(lame);
             if (result < 0) throw new IllegalStateException("Failed to initialize LAME parameters: " + result);
 
-            int frameCount = samples.length / FORMAT.getChannels();
+            int frameCount = samples.length / FORMAT.channels();
             byte[] dataBuffer = new byte[(int) (1.25F * frameCount + 7200)];
             int dataLength = LameLibrary.INSTANCE.lame_encode_buffer_interleaved_ieee_float(lame, samples, frameCount, dataBuffer, dataBuffer.length);
             if (dataLength < 0) throw new IllegalStateException("Failed to encode buffer: " + dataLength);
@@ -58,7 +58,7 @@ public class Mp3Encoder {
     private static float[] sample(final NbsSong song) throws Exception {
         try (SongRenderer renderer = new ProgressSongRenderer(song, MAX_SOUNDS, true, true, FORMAT, progress -> {})) {
             renderer.setTimingJitter(true);
-            return renderer.renderSong();
+            return renderer.renderSong().samples();
         }
     }
 
