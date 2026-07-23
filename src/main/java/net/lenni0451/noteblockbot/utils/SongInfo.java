@@ -15,8 +15,8 @@ public class SongInfo {
 
     public static String fromApi(final JSONObject apiObject, final NbsSong song) {
         Map<String, String> metadata = new LinkedHashMap<>();
-        metadata.put("Description", apiObject.optString("description"));
-        metadata.put("Original author", apiObject.optString("originalAuthor"));
+        metadata.put("Description", sanitize(apiObject.optString("description")));
+        metadata.put("Original author", sanitize(apiObject.optString("originalAuthor")));
         metadata.put("Notes", String.valueOf(song.getNotes().getNoteCount()));
         int vanillaInstruments = SongUtil.getUsedVanillaInstruments(song).size();
         int customInstruments = SongUtil.getUsedNbsCustomInstruments(song).size();
@@ -34,7 +34,7 @@ public class SongInfo {
             String timeSpent = minutesSpent / 60 + "h " + minutesSpent % 60 + "m";
             metadata.put("Time spent", timeSpent);
         }
-        metadata.put("Midi file name", apiObject.optJSONObject("stats", EMPTY_JSON).optString("midiFileName"));
+        metadata.put("Midi file name", sanitize(apiObject.optJSONObject("stats", EMPTY_JSON).optString("midiFileName")));
         return format(metadata);
     }
 
@@ -64,7 +64,7 @@ public class SongInfo {
     }
 
     private static String sanitize(final String s) {
-        return MarkdownSanitizer.sanitize(s, MarkdownSanitizer.SanitizationStrategy.ESCAPE);
+        return MarkdownSanitizer.escape(s);
     }
 
 }
