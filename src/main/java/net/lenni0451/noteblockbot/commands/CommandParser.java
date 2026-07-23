@@ -203,6 +203,13 @@ public abstract class CommandParser extends ListenerAdapter {
                     throw new IllegalArgumentException("Invalid argument type for CHANNEL: " + type.getName());
                 }
             }
+            case BOOLEAN -> {
+                if (type.equals(Boolean.class) || type.equals(boolean.class)) {
+                    parser = OptionMapping::getAsBoolean;
+                } else {
+                    throw new IllegalArgumentException("Invalid argument type for BOOLEAN: " + type.getName());
+                }
+            }
             default -> throw new IllegalArgumentException("Invalid argument type: " + arg.type());
         }
         return new ArgumentType(arg, required != null, parser, completionSupplier);

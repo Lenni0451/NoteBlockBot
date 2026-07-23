@@ -6,24 +6,20 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.utils.FileUpload;
 import net.lenni0451.noteblockbot.Main;
 import net.lenni0451.noteblockbot.data.Config;
 import net.lenni0451.noteblockbot.data.RateLimiter;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
-import net.lenni0451.noteblockbot.export.Mp3Encoder;
 import net.lenni0451.noteblockbot.utils.NetUtils;
-import net.lenni0451.noteblockbot.utils.SongInfo;
+import net.lenni0451.noteblockbot.utils.SongExporter;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
 import net.raphimc.noteblocklib.format.nbs.model.NbsSong;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 @Slf4j
 public class MessageListener extends ListenerAdapter {
@@ -31,7 +27,6 @@ public class MessageListener extends ListenerAdapter {
     private static final Emoji CALCULATING = Emoji.fromUnicode("⏱️");
     private static final Emoji RATE_LIMITED = Emoji.fromUnicode("🐌");
     private static final Emoji ERROR = Emoji.fromUnicode("❌");
-    private static final Pattern URL_PATTERN = Pattern.compile("https?://\\S*");
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
@@ -77,17 +72,8 @@ public class MessageListener extends ListenerAdapter {
                 message.reply("The song is too long (Max: " + Config.SongLimits.maxNbsLength + " seconds)").queue();
                 return;
             }
-            byte[] mp3Data = Mp3Encoder.encode(song, new File("Sounds"));
-            String info = SongInfo.fromSong(song);
-            info = URL_PATTERN.matcher(info).replaceAll("<$0>");
-            String songName = fileName.substring(0, fileName.length() - 4);
-            if (!song.getTitleOr("").isBlank()) songName = song.getTitle();
-            FileUpload upload = FileUpload.fromData(mp3Data, songName + ".mp3");
-            if (spoiler) {
-                upload = upload.asSpoiler();
-                info = "||" + info + "||";
-            }
-            message.replyFiles(upload).setContent(info).queue();
+            SongExporter.ProcessedSong processed = SongExporter.process(song, fileName, spoiler);
+            message.replyFiles(processed.upload()).setContent(processed.info()).queue();
             if (Config.logInteractions) {
                 try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MP3_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"Source\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                     statement.setLong(1, message.getGuild().getIdLong());

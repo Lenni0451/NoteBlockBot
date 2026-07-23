@@ -15,8 +15,10 @@ import net.lenni0451.noteblockbot.commands.annotations.Required;
 import net.lenni0451.noteblockbot.data.Config;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
 import net.lenni0451.noteblockbot.utils.NetUtils;
+import net.lenni0451.noteblockbot.utils.SongExporter;
 import net.raphimc.noteblocklib.NoteBlockLib;
 import net.raphimc.noteblocklib.format.SongFormat;
+import net.raphimc.noteblocklib.format.nbs.model.NbsSong;
 import net.raphimc.noteblocklib.model.song.Song;
 
 import java.io.ByteArrayOutputStream;
@@ -30,7 +32,8 @@ public class MidiConverterCommand extends CommandParser {
     @Command(name = "midiconverter", description = "Convert a midi file to a noteblock song")
     public void run(
             SlashCommandInteractionEvent event,
-            @Arg(type = OptionType.ATTACHMENT, name = "midi-file", description = "The midi file that should be converted") @Required Message.Attachment attachment
+            @Arg(type = OptionType.ATTACHMENT, name = "midi-file", description = "The midi file that should be converted") @Required Message.Attachment attachment,
+            @Arg(type = OptionType.BOOLEAN, name = "play", description = "Immediately render and send the song to the channel") Boolean play
     ) {
         this.validateAttachment(attachment, Config.SongLimits.maxMidiFileSize, "mid", "midi");
         log.info("User {} uploaded midi file {}", event.getUser().getAsTag(), attachment.getFileName());
@@ -61,6 +64,17 @@ public class MidiConverterCommand extends CommandParser {
                         statement.execute();
                     } catch (Throwable t) {
                         log.error("An error occurred while saving the midi conversion", t);
+                    }
+                }
+
+                if (play != null && play) {
+                    if (nbsData.size() > Config.SongLimits.maxNbsFileSize) {
+                        event.getChannel().sendMessage("The converted song is too large to render (Max: " + Config.SongLimits.maxNbsFileSize + " bytes)").queue();
+                    } else if (song.getLengthInSeconds() > Config.SongLimits.maxNbsLength) {
+                        event.getChannel().sendMessage("The converted song is too long to render (Max: " + Config.SongLimits.maxNbsLength + " seconds)").queue();
+                    } else {
+                        SongExporter.ProcessedSong processed = SongExporter.process((NbsSong) song, fileName, attachment.isSpoiler());
+                        event.getChannel().sendFiles(processed.upload()).setContent(processed.info()).queue();
                     }
                 }
             } catch (Throwable t) {
