@@ -63,11 +63,12 @@ public class MessageListener extends ListenerAdapter {
             }
 
             log.info("User {} uploaded song {}", event.getAuthor().getAsTag(), attachment.getFileName());
-            tasks.add(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl()));
+            boolean isSpoiler = attachment.isSpoiler();
+            tasks.add(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl(), isSpoiler));
         }
     }
 
-    private void processSong(final Message message, final String fileName, final String url) {
+    private void processSong(final Message message, final String fileName, final String url, final boolean spoiler) {
         try {
             long start = System.currentTimeMillis();
             byte[] songData = NetUtils.get(url).getContent().getAsBytes();
@@ -81,7 +82,12 @@ public class MessageListener extends ListenerAdapter {
             info = URL_PATTERN.matcher(info).replaceAll("<$0>");
             String songName = fileName.substring(0, fileName.length() - 4);
             if (!song.getTitleOr("").isBlank()) songName = song.getTitle();
-            message.replyFiles(FileUpload.fromData(mp3Data, songName + ".mp3")).setContent(info).queue();
+            FileUpload upload = FileUpload.fromData(mp3Data, songName + ".mp3");
+            if (spoiler) {
+                upload = upload.asSpoiler();
+                info = "||" + info + "||";
+            }
+            message.replyFiles(upload).setContent(info).queue();
             if (Config.logInteractions) {
                 try (PreparedStatement statement = Main.getDb().prepare("INSERT INTO \"" + SQLiteDB.MP3_CONVERSIONS + "\" (\"GuildId\", \"UserId\", \"UserName\", \"Date\", \"Source\", \"FileName\", \"FileSize\", \"FileHash\", \"ConversionDuration\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                     statement.setLong(1, message.getGuild().getIdLong());
