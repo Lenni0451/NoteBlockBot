@@ -58,8 +58,7 @@ public class MessageListener extends ListenerAdapter {
             }
 
             log.info("User {} uploaded song {}", event.getAuthor().getAsTag(), attachment.getFileName());
-            boolean isSpoiler = attachment.isSpoiler();
-            tasks.add(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl(), isSpoiler));
+            tasks.add(() -> this.processSong(event.getMessage(), attachment.getFileName(), attachment.getUrl(), attachment.isSpoiler()));
         }
     }
 
