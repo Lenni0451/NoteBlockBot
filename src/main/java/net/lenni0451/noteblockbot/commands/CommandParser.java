@@ -74,9 +74,9 @@ public abstract class CommandParser extends ListenerAdapter {
         if (!event.isFromGuild()) return;
         for (RegisteredCommand command : this.registeredCommands) {
             if (!command.command().name().equalsIgnoreCase(event.getName())) continue;
-            if (command.rateLimited.user() && !RateLimiter.tryUser(event.getUser().getIdLong())) {
+            if (command.rateLimited != null && command.rateLimited.user() && !RateLimiter.tryUser(event.getUser().getIdLong())) {
                 event.reply("You are sending too many requests. Please wait a bit before sending another request. 🐌").setEphemeral(true).queue();
-            } else if (command.rateLimited.guild() && !RateLimiter.tryGuild(event.getGuild().getIdLong())) {
+            } else if (command.rateLimited != null && command.rateLimited.guild() && !RateLimiter.tryGuild(event.getGuild().getIdLong())) {
                 event.reply("You are sending too many requests. Please wait a bit before sending another request. 🐌").setEphemeral(true).queue();
             } else {
                 Object[] arguments = new Object[command.arguments.size() + 1];

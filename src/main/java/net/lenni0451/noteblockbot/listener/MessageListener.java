@@ -35,6 +35,7 @@ public class MessageListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
+        if (!event.isFromGuild()) return;
         if (event.getAuthor().isBot()) return;
         List<Runnable> tasks = new ArrayList<>();
         this.handleNbsAttachments(event, tasks);
@@ -50,6 +51,10 @@ public class MessageListener extends ListenerAdapter {
                 .filter(attachment -> attachment.getFileExtension().equalsIgnoreCase("nbs"))
                 .toList();
         for (Message.Attachment attachment : nbsFiles) {
+            if (attachment.getSize() > Config.SongLimits.maxNbsFileSize) {
+                event.getMessage().reply("The attachment is too large (Max: " + Config.SongLimits.maxNbsFileSize + " bytes)").queue();
+                continue;
+            }
             if (!RateLimiter.tryUser(event.getAuthor().getIdLong()) || !RateLimiter.tryGuild(event.getGuild().getIdLong())) {
                 if (tasks.stream().noneMatch(t -> t instanceof SendRateLimitReactionTask)) {
                     tasks.add(new SendRateLimitReactionTask(event.getMessage()));
@@ -67,6 +72,10 @@ public class MessageListener extends ListenerAdapter {
             long start = System.currentTimeMillis();
             byte[] songData = NetUtils.get(url).getContent().getAsBytes();
             NbsSong song = (NbsSong) NoteBlockLib.readSong(songData, SongFormat.NBS);
+            if (song.getLengthInSeconds() > Config.SongLimits.maxNbsLength) {
+                message.reply("The song is too long (Max: " + Config.SongLimits.maxNbsLength + " seconds)").queue();
+                return;
+            }
             byte[] mp3Data = Mp3Encoder.encode(song, new File("Sounds"));
             String info = SongInfo.fromSong(song);
             info = URL_PATTERN.matcher(info).replaceAll("<$0>");

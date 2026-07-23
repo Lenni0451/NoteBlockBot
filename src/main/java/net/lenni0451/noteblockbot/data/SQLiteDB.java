@@ -1,6 +1,7 @@
 package net.lenni0451.noteblockbot.data;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -8,7 +9,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Map;
 
-public class SQLiteDB {
+@Slf4j
+public class SQLiteDB implements AutoCloseable {
 
     public static final String MP3_CONVERSIONS = "Mp3Conversions";
     public static final String MIDI_CONVERSIONS = "MidiConversions";
@@ -24,6 +26,14 @@ public class SQLiteDB {
     public SQLiteDB(final String path) throws SQLException {
         this.connection = DriverManager.getConnection("jdbc:sqlite:" + path);
         this.createTables();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                this.close();
+            } catch (Throwable t) {
+                log.error("Failed to close database", t);
+            }
+        }));
     }
 
     public Connection getConnection() {
@@ -40,6 +50,13 @@ public class SQLiteDB {
             try (PreparedStatement statement = this.connection.prepareStatement("CREATE TABLE IF NOT EXISTS \"" + entry.getKey() + "\" " + entry.getValue())) {
                 statement.execute();
             }
+        }
+    }
+
+    @Override
+    public void close() throws SQLException {
+        if (this.connection != null) {
+            this.connection.close();
         }
     }
 
