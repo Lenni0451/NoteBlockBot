@@ -24,7 +24,7 @@ import java.util.List;
 @Slf4j
 public class Main {
 
-    private final static File tokenFile = new File("token.txt");
+    private final static File TOKEN_FILE = new File("token.txt");
     @Getter
     private static TaskQueue taskQueue;
     @Getter
@@ -33,8 +33,8 @@ public class Main {
     private static JDA jda;
 
     public static void main(String[] args) throws Throwable {
-        tokenFile.createNewFile();
-        String token = Files.readString(tokenFile.toPath()).trim();
+        TOKEN_FILE.createNewFile();
+        String token = Files.readString(TOKEN_FILE.toPath()).trim();
         if (token.isBlank()) {
             log.error("Please enter a valid token in the token.txt file");
             return;
