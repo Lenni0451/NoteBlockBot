@@ -1,6 +1,5 @@
 package net.lenni0451.noteblockbot.listener;
 
-import com.google.common.hash.Hashing;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -10,6 +9,7 @@ import net.lenni0451.noteblockbot.Main;
 import net.lenni0451.noteblockbot.data.Config;
 import net.lenni0451.noteblockbot.data.RateLimiter;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
+import net.lenni0451.noteblockbot.utils.HashUtils;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.lenni0451.noteblockbot.utils.SongExporter;
 import net.raphimc.noteblocklib.NoteBlockLib;
@@ -82,7 +82,7 @@ public class MessageListener extends ListenerAdapter {
                     statement.setInt(5, 0); //0=Attachment 1=NoteblockWorld
                     statement.setString(6, fileName);
                     statement.setInt(7, songData.length);
-                    statement.setString(8, Hashing.md5().hashBytes(songData).toString());
+                    statement.setString(8, HashUtils.md5(songData));
                     statement.setLong(9, System.currentTimeMillis() - start);
                     statement.execute();
                 }

@@ -1,6 +1,5 @@
 package net.lenni0451.noteblockbot.commands.impl;
 
-import com.google.common.hash.Hashing;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -14,6 +13,7 @@ import net.lenni0451.noteblockbot.commands.annotations.RateLimited;
 import net.lenni0451.noteblockbot.commands.annotations.Required;
 import net.lenni0451.noteblockbot.data.Config;
 import net.lenni0451.noteblockbot.data.SQLiteDB;
+import net.lenni0451.noteblockbot.utils.HashUtils;
 import net.lenni0451.noteblockbot.utils.NetUtils;
 import net.lenni0451.noteblockbot.utils.SongExporter;
 import net.raphimc.noteblocklib.NoteBlockLib;
@@ -59,7 +59,7 @@ public class MidiConverterCommand extends CommandParser {
                         statement.setString(4, event.getTimeCreated().toString());
                         statement.setString(5, attachment.getFileName());
                         statement.setLong(6, attachment.getSize());
-                        statement.setString(7, Hashing.md5().hashBytes(midiData).toString());
+                        statement.setString(7, HashUtils.md5(midiData));
                         statement.setLong(8, time);
                         statement.execute();
                     } catch (Throwable t) {

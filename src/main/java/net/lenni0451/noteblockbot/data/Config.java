@@ -20,7 +20,7 @@ public class Config {
 
         @Option("MaxNbsLength")
         @Description("The maximum length of a NBS file in seconds")
-        public static int maxNbsLength = 60 * 20; //TODO
+        public static int maxNbsLength = 60 * 20;
 
         @Option("MaxMidiFileSize")
         @Description("The maximum file size for converting MIDI files to NBS in bytes")
